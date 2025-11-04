@@ -42,8 +42,9 @@
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" @click="startEncoding">{{ t('startEncodingBtn') }}</el-button>
-          <el-button @click="loadLastParams">{{ t('loadLastParamsBtn') }}</el-button>
+          <el-button type="primary" @click="startEncoding" :disabled="isEncoding">{{ t('startEncodingBtn') }}</el-button>
+          <el-button type="danger" @click="cancelEncoding" :disabled="!isEncoding">{{ t('cancelEncodingBtn') }}</el-button>
+          <el-button @click="loadLastParams" :disabled="isEncoding">{{ t('loadLastParamsBtn') }}</el-button>
           <el-button @click="exitApp">{{ t('exitBtn') }}</el-button>
         </el-form-item>
       </el-form>
@@ -54,8 +55,9 @@
 
       <el-card class="box-card" style="margin-top: 20px;">
         <template #header>
-          <div class="card-header">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
             <span>{{ t('logOutputTitle') }}</span>
+            <el-button size="small" type="warning" plain @click="clearLog" :disabled="!logOutput">{{ t('clearLogBtn') }}</el-button>
           </div>
         </template>
         <div style="white-space: pre-wrap; max-height: 300px; overflow-y: auto; background-color: #f5f5f5; padding: 10px; border-radius: 4px;">
@@ -108,9 +110,12 @@ const messages = {
     prependSilence: '开头静音时长',
     appendSilence: '结尾静音时长',
     startEncodingBtn: '开始编码',
+    cancelEncodingBtn: '取消编码',
     loadLastParamsBtn: '加载上次参数',
     exitBtn: '退出',
     logOutputTitle: '日志输出',
+    clearLogBtn: '清空日志',
+    logCleared: '日志已清空',
     placeholderStart: 'HH:MM:SS:FF / HH:MM:SS.xx',
     placeholderEnd: 'HH:MM:SS:FF / HH:MM:SS.xx',
     placeholderPrepend: '秒，如10.0',
@@ -118,7 +123,11 @@ const messages = {
     encodingComplete: '编码完成，退出码: ',
     encodingError: '编码错误: ',
     encodingStarting: '开始编码...',
+    encodingCancelled: '编码已取消',
     startFailed: '启动编码进程失败: ',
+    cancelRequested: '已请求取消编码...',
+    cancelEncodingFailed: '取消编码失败: ',
+    encodingInProgress: '编码任务正在进行中。',
     loadingLast: '正在加载上次参数...',
     loadedLastOk: '成功加载上次参数。',
     loadedLastNone: '未找到有效的上次操作记录。',
@@ -132,7 +141,7 @@ const messages = {
     deeRootSelectError: '无法选择目录',
     loadSettingsFail: '加载设置失败: ',
     saveSettingsFail: '保存设置失败: ',
-    pathIllegalChars: '文件路径不能包含空格或双引号，请更换路径后重试。',
+    pathIllegalChars: '文件路径不能包含双引号，请更换路径后重试。',
     inputFileMissing: '输出失败：输入文件不存在。'
   },
   en: {
@@ -153,9 +162,12 @@ const messages = {
     prependSilence: 'Leading Silence (s)',
     appendSilence: 'Trailing Silence (s)',
     startEncodingBtn: 'Start Encoding',
+    cancelEncodingBtn: 'Cancel Encoding',
     loadLastParamsBtn: 'Load Last Params',
     exitBtn: 'Exit',
     logOutputTitle: 'Log Output',
+    clearLogBtn: 'Clear Log',
+    logCleared: 'Log cleared',
     placeholderStart: 'HH:MM:SS:FF / HH:MM:SS.xx',
     placeholderEnd: 'HH:MM:SS:FF / HH:MM:SS.xx',
     placeholderPrepend: 'seconds, e.g. 10.0',
@@ -163,7 +175,11 @@ const messages = {
     encodingComplete: 'Encoding finished, exit code: ',
     encodingError: 'Encoding error: ',
     encodingStarting: 'Starting encoding...',
+    encodingCancelled: 'Encoding cancelled',
     startFailed: 'Failed to start encoding: ',
+    cancelRequested: 'Cancellation requested...',
+    cancelEncodingFailed: 'Failed to cancel encoding: ',
+    encodingInProgress: 'Encoding already in progress.',
     loadingLast: 'Loading last parameters...',
     loadedLastOk: 'Successfully loaded last parameters.',
     loadedLastNone: 'No valid previous operation found.',
@@ -177,7 +193,7 @@ const messages = {
     deeRootSelectError: 'Failed to choose directory',
     loadSettingsFail: 'Failed to load settings: ',
     saveSettingsFail: 'Failed to save settings: ',
-    pathIllegalChars: 'File paths cannot contain spaces or double quotes. Please choose a different location.',
+    pathIllegalChars: 'File paths cannot contain double quotes. Please choose a different location.',
     inputFileMissing: 'Encoding failed: input file does not exist.'
   },
 }
@@ -196,7 +212,7 @@ const form = reactive({
 
 const hasIllegalPathChars = (value) => {
   if (typeof value !== 'string') return false
-  return /["\s]/.test(value)
+  return /"/.test(value)
 }
 
 const lastValidInputPath = ref(form.inputFile)
@@ -235,8 +251,15 @@ watch(() => form.outputFile, (newVal) => {
 const logOutput = ref('')
 const progress = ref(0)
 const showProgress = ref(false)
+const isEncoding = ref(false)
 const settingsDialogVisible = ref(false)
 const deeRootInput = ref('')
+
+const clearLog = () => {
+  if (!logOutput.value) return
+  logOutput.value = ''
+  ElMessage.success(t('logCleared'))
+}
 
 const currentSettings = ref({ deeRoot: '', language: lang.value })
 
@@ -279,6 +302,7 @@ onMounted(() => {
       }
     })
     ipcRenderer.on('encoding-complete', (event, code) => {
+      isEncoding.value = false
       ElMessage.success(`编码完成，退出码: ${code}`)
       logOutput.value += `编码完成，退出码: ${code}\n`
       lastErrorIsMissingFile.value = false
@@ -287,6 +311,7 @@ onMounted(() => {
       scheduleHideProgress()
     })
     ipcRenderer.on('encoding-error', (event, error) => {
+      isEncoding.value = false
       ElMessage.error(`${t('encodingError')}${error}`)
       logOutput.value += `编码错误: ${error}\n`
       if (lastErrorIsMissingFile.value || /Storage:\s*File\s+"(.+?)"\s+does\s+not\s+exist/i.test(error)) {
@@ -301,6 +326,12 @@ onMounted(() => {
       if (progress.value >= 100) {
         scheduleHideProgress()
       }
+    })
+    ipcRenderer.on('encoding-cancelled', () => {
+      isEncoding.value = false
+      ElMessage.info(t('encodingCancelled'))
+      logOutput.value += `${t('encodingCancelled')}\n`
+      scheduleHideProgress()
     })
     ipcRenderer.on('settings-updated', (event, newSettings) => {
       applySettings(newSettings)
@@ -328,6 +359,11 @@ onUnmounted(() => {
     progressHideTimer = null
   }
   if (ipcRenderer) {
+    ipcRenderer.removeAllListeners('console-output')
+    ipcRenderer.removeAllListeners('encoding-complete')
+    ipcRenderer.removeAllListeners('encoding-error')
+    ipcRenderer.removeAllListeners('encoding-progress')
+    ipcRenderer.removeAllListeners('encoding-cancelled')
     ipcRenderer.removeAllListeners('settings-updated')
     ipcRenderer.removeAllListeners('set-language')
   }
@@ -431,6 +467,11 @@ const startEncoding = async () => {
     return
   }
 
+  if (isEncoding.value) {
+    ElMessage.warning(t('encodingInProgress'))
+    return
+  }
+
   logOutput.value = '' // 清空日志
   const currentOutputFile = form.outputFile || defaultOutputFile.value;
 
@@ -476,7 +517,7 @@ const startEncoding = async () => {
     paramsToEncode.inputFile,
   ]
   
-
+  isEncoding.value = true
   if (progressHideTimer) {
     clearTimeout(progressHideTimer)
     progressHideTimer = null
@@ -491,6 +532,34 @@ const startEncoding = async () => {
     ElMessage.error(`${t('startFailed')}${error.message}`)
     logOutput.value += `${t('startFailed')}${error.message}\n`
     scheduleHideProgress()
+  } finally {
+    isEncoding.value = false
+  }
+}
+
+const cancelEncoding = async () => {
+  if (!ipcRenderer) {
+    ElMessage.error('IPC 通信不可用。')
+    return
+  }
+
+  if (!isEncoding.value) {
+    return
+  }
+
+  try {
+    const result = await ipcRenderer.invoke('cancel-c-program')
+    if (result && result.success) {
+      ElMessage.info(t('cancelRequested'))
+    } else if (result && (result.reason === 'ALREADY_EXITED' || result.reason === 'NO_PROCESS')) {
+      isEncoding.value = false
+    } else if (result && result.message) {
+      ElMessage.error(`${t('cancelEncodingFailed')}${result.message}`)
+    } else {
+      ElMessage.error(t('cancelEncodingFailed'))
+    }
+  } catch (error) {
+    ElMessage.error(`${t('cancelEncodingFailed')}${error.message}`)
   }
 }
 

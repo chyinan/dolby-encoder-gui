@@ -1,6 +1,6 @@
 'use strict'
 
-import { app, BrowserWindow, ipcMain, dialog, Menu, protocol } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, Menu, protocol, shell } from 'electron'
 import { spawn } from 'child_process'
 import path from 'path'
 import fs from 'fs'
@@ -88,7 +88,18 @@ const buildAppMenu = () => {
               dialog.showMessageBox(mainWindow, {
                 type: 'info',
                 title: 'About',
-                message: `Dolby Encoding Engine\nVersion: ${app.getVersion()}`,
+                message: 'Dolby Encoding Engine',
+                detail: `Version: ${app.getVersion()}\nGitHub: https://github.com/chyinan/dolby-encoder-gui`,
+                buttons: ['Open GitHub', 'OK'],
+                defaultId: 1,
+                cancelId: 1,
+                noLink: true,
+              }).then((result) => {
+                if (result.response === 0) {
+                  shell.openExternal('https://github.com/chyinan/dolby-encoder-gui').catch((err) => {
+                    console.warn('Failed to open GitHub link:', err)
+                  })
+                }
               })
             },
           },
@@ -109,8 +120,70 @@ const C_PROGRAM_PATH = process.env.ENCODE_PATH || path.join(__dirname, '..', 'en
 const STATE_FILE_PATH = path.join(__dirname, '..', 'last_params.txt')
 
 let mainWindow
+let currentProcessInfo = null
 
 const PROGRESS_REGEX = /Overall progress:\s*([0-9]+(?:\.[0-9]+)?)/gi
+
+const terminateProcessTree = (childProcess) => {
+  if (!childProcess || childProcess.exitCode !== null) {
+    return Promise.resolve(true)
+  }
+
+  const pid = childProcess.pid
+  if (!pid) {
+    return Promise.resolve(true)
+  }
+
+  if (process.platform === 'win32') {
+    return new Promise((resolve, reject) => {
+      const killer = spawn('taskkill', ['/PID', pid.toString(), '/T', '/F'], {
+        windowsHide: true,
+      })
+
+      killer.on('exit', (code) => {
+        // 0 表示成功，128 表示进程不存在，也视为成功
+        if (code === 0 || code === 128) {
+          resolve(true)
+        } else {
+          reject(new Error(`taskkill 退出码: ${code}`))
+        }
+      })
+
+      killer.on('error', (error) => {
+        reject(error)
+      })
+    })
+  }
+
+  return new Promise((resolve, reject) => {
+    try {
+      childProcess.kill('SIGTERM')
+    } catch (error) {
+      if (error.code === 'ESRCH') {
+        resolve(true)
+        return
+      }
+      reject(error)
+      return
+    }
+
+    const timeout = setTimeout(() => {
+      if (childProcess.exitCode === null) {
+        try {
+          childProcess.kill('SIGKILL')
+        } catch (err) {
+          // 如果进程已经退出或不支持，忽略错误
+        }
+      }
+      resolve(true)
+    }, 2500)
+
+    childProcess.once('exit', () => {
+      clearTimeout(timeout)
+      resolve(true)
+    })
+  })
+}
 
 const emitProgress = (text) => {
   if (!mainWindow) return
@@ -215,6 +288,12 @@ app.on('activate', () => {
 ipcMain.handle('run-c-program', async (event, args) => {
   console.log('Renderer requested to run C program with args:', args)
   return new Promise((resolve, reject) => {
+    if (currentProcessInfo && currentProcessInfo.process && currentProcessInfo.process.exitCode === null) {
+      const err = new Error('编码任务正在进行中，请先取消当前任务。')
+      console.warn(err.message)
+      reject(err)
+      return
+    }
     if (!fs.existsSync(C_PROGRAM_PATH)) {
       console.error('C program not found:', C_PROGRAM_PATH)
       reject(new Error(`C 程序未找到: ${C_PROGRAM_PATH}`))
@@ -227,6 +306,8 @@ ipcMain.handle('run-c-program', async (event, args) => {
       env.DEE_ROOT = settings.deeRoot
     }
     const cProcess = spawn(C_PROGRAM_PATH, args, { cwd: path.dirname(C_PROGRAM_PATH), env })
+    const processInfo = { process: cProcess, wasKilled: false }
+    currentProcessInfo = processInfo
 
     cProcess.stdout.on('data', (data) => {
       const text = data.toString()
@@ -242,23 +323,57 @@ ipcMain.handle('run-c-program', async (event, args) => {
       emitProgress(text)
     })
 
-    cProcess.on('close', (code) => {
-      console.log(`C program exited with code: ${code}`)
+    cProcess.on('close', (code, signal) => {
+      console.log(`C program exited with code: ${code}, signal: ${signal}`)
+      const wasKilled = processInfo.wasKilled || Boolean(signal)
+      if (currentProcessInfo && currentProcessInfo.process === cProcess) {
+        currentProcessInfo = null
+      }
+      if (wasKilled) {
+        mainWindow.webContents.send('encoding-cancelled', { code, signal })
+        resolve({ cancelled: true, code, signal })
+        return
+      }
       if (code !== 0) {
         mainWindow.webContents.send('encoding-error', `C 程序退出码: ${code}`)
         reject(new Error(`C 程序退出码: ${code}`))
       } else {
         mainWindow.webContents.send('encoding-complete', code)
-        resolve(code)
+        resolve({ cancelled: false, code })
       }
     })
 
     cProcess.on('error', (err) => {
       console.error(`Failed to start C program process: ${err.message}`)
       mainWindow.webContents.send('encoding-error', `启动 C 程序失败: ${err.message}`)
+      if (currentProcessInfo && currentProcessInfo.process === cProcess) {
+        currentProcessInfo = null
+      }
       reject(err)
     })
   })
+})
+
+ipcMain.handle('cancel-c-program', async () => {
+  if (!currentProcessInfo || !currentProcessInfo.process) {
+    return { success: false, reason: 'NO_PROCESS' }
+  }
+
+  const { process } = currentProcessInfo
+
+  if (process.exitCode !== null) {
+    currentProcessInfo = null
+    return { success: false, reason: 'ALREADY_EXITED' }
+  }
+
+  try {
+    currentProcessInfo.wasKilled = true
+    await terminateProcessTree(process)
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to cancel C program:', error)
+    return { success: false, reason: 'ERROR', message: error.message }
+  }
 })
 
 // IPC: 加载 C 程序保存的参数

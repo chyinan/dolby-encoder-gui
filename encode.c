@@ -163,25 +163,10 @@ static void copy_string(char *dest, size_t dest_size, const char *src) {
 }
 
 #ifdef _WIN32
-static int argument_needs_quotes(const char *src) {
-    if (!src || *src == '\0') return 1;
-    for (const char *p = src; *p; ++p) {
-        if (isspace((unsigned char)*p) || *p == '"') {
-            return 1;
-        }
-    }
-    return 0;
-}
-
 static void quote_argument(char *dest, size_t dest_size, const char *src) {
     if (!dest || dest_size == 0) return;
     dest[0] = '\0';
     if (!src) return;
-
-    if (!argument_needs_quotes(src)) {
-        copy_string(dest, dest_size, src);
-        return;
-    }
 
     size_t pos = 0;
     if (pos < dest_size - 1) dest[pos++] = '"';

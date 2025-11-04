@@ -5,5 +5,5 @@ prepend_silence=
 append_silence=
 template_xml=D:\Dolby_Encoding_Engine\xml_templates\encode_to_atmos_ddp\atmos_mezz_encode_to_atmos_ddp_mp4.xml
 output_file=D:\atmos.m4a
-input_file=D:\ADM.wav
+input_file=D:\A  DM.wav
 valid=1
