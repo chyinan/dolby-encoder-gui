@@ -23,7 +23,7 @@ Dolby Encoding Engine GUI is a lightweight Electron + Vue 3 desktop helper that 
 
 - **Node.js** 16 or newer (recommended) with npm.
 - **A Windows-compatible C toolchain** if you need to rebuild the helper bridge `encode.exe` from `encode.c` (MSVC or MinGW-w64).
-- **Dolby Encoding Engine assets** (XML templates, etc.) expected by the CLI encoder.
+- **Dolby Encoding Engine**. This software is only compatible with `Dolby Encoding Engine v2.3`.
 
 ## Project Structure
 
@@ -117,9 +117,9 @@ Dolby Encoding Engine GUI 是一个基于 Electron + Vue 3 的桌面工具，用
 
 ## 环境依赖
 
-- 建议安装 **Node.js 16+** 及 npm。
-- 需要 **Windows C 编译环境**（MSVC 或 MinGW-w64）以便修改后重新编译 `encode.exe`。
-- 准备好 Dolby Encoding Engine 所需的 XML 模板等资源。
+- 安装 **Node.js 16+** 及 npm。
+- 如需修改代码，需安装 **Windows C 编译环境**（MSVC 或 MinGW-w64）以便修改后重新编译 `encode.exe`。
+- **Dolby Encoding Engine** 本软件仅适配Dolby Encoding Engine v2.3。
 
 ## 项目结构
 
