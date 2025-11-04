@@ -2,7 +2,7 @@
 
 ## Overview
 
-Dolby Encoding Engine GUI is a lightweight Electron + Vue 3 desktop helper that wraps the existing Dolby encoding command line (`encode.exe`). It provides a friendly interface for selecting input/output files, switching between Atmos EC3 and Atmos M4A encoding profiles, monitoring real-time logs, and displaying progress as reported by the encoder.
+Dolby Encoding Engine GUI is a lightweight Electron + Vue 3 desktop helper that wraps the existing bridge command line (`encode.exe`). This helper executable simply forwards parameters to the official Dolby `dee.exe` suite. The GUI provides a friendly interface for selecting input/output files, switching between Atmos EC3 and Atmos M4A encoding profiles, monitoring real-time logs, and displaying progress as reported by the encoder.
 
 ## Key Features
 
@@ -22,7 +22,7 @@ Dolby Encoding Engine GUI is a lightweight Electron + Vue 3 desktop helper that 
 ## Prerequisites
 
 - **Node.js** 16 or newer (recommended) with npm.
-- **A Windows-compatible C toolchain** if you need to rebuild `encode.exe` from `encode.c` (MSVC or MinGW-w64).
+- **A Windows-compatible C toolchain** if you need to rebuild the helper bridge `encode.exe` from `encode.c` (MSVC or MinGW-w64).
 - **Dolby Encoding Engine assets** (XML templates, etc.) expected by the CLI encoder.
 
 ## Project Structure
@@ -30,7 +30,7 @@ Dolby Encoding Engine GUI is a lightweight Electron + Vue 3 desktop helper that 
 - `src/` — Vue renderer code (`App.vue`, Element Plus forms, IPC listeners).
 - `src/background.js` — Electron main process. Launches the renderer, configures menus, forwards stdout/stderr, and emits progress events.
 - `preload.js` — Exposes a limited `ipcRenderer` bridge to the renderer process.
-- `encode.c` — Reference source used to compile `encode.exe`; handles CLI parameters and persisting state.
+- `encode.c` — Reference source used to compile the helper `encode.exe`; it handles CLI parameters, persists state, and ultimately calls the official Dolby `dee.exe` tools.
 - `last_params.txt` — Generated state file stored alongside the app (optional, created at runtime).
 
 ## Setup & Development
@@ -39,7 +39,7 @@ Dolby Encoding Engine GUI is a lightweight Electron + Vue 3 desktop helper that 
    ```bash
    npm install
    ```
-2. Place `encode.exe`, `encode.c` (optional for rebuilding), and any required Dolby assets in the repository root (`dolby-encoder-gui/`).
+2. Place the helper `encode.exe`, `encode.c` (optional for rebuilding), the official Dolby `dee.exe` binaries, and any required Dolby assets in the repository root (`dolby-encoder-gui/`).
 3. (Optional) Define `ENCODE_PATH` if `encode.exe` lives elsewhere:
    ```cmd
    set ENCODE_PATH=C:\path\to\encode.exe
@@ -77,7 +77,7 @@ gcc -O2 -Wall -o encode.exe encode.c
 2. Pick the ADM WAV input file and set an output path.
 3. Choose the encoding profile (Atmos EC3 or Atmos M4A).
 4. Optionally enter start/end times and leading/trailing silence durations.
-5. Click **Start Encoding** to invoke `encode.exe` with the provided parameters.
+5. Click **Start Encoding** to invoke the helper `encode.exe`, which in turn calls the official `dee.exe` tools with the provided parameters.
 6. Observe progress and logs:
    - Logs display in real time.
    - Progress bar updates whenever the log contains `Overall progress: <value>`.
@@ -87,7 +87,7 @@ gcc -O2 -Wall -o encode.exe encode.c
 
 ## Notes & Troubleshooting
 
-- Ensure `encode.exe` has access to the Dolby XML templates referenced inside `encode.c`.
+- Ensure the helper `encode.exe` and the official `dee.exe` binaries have access to the Dolby XML templates referenced inside `encode.c`.
 - The Dolby engine path defaults to `D:\Dolby_Encoding_Engine`. Update it via **Settings** if your assets live elsewhere. The same path is also accepted from the `DEE_ROOT` environment variable.
 - `last_params.txt` is read/written in the project root. Delete it to reset persisted values.
 - If progress stays at 0%, verify that the encoder logs still include `Overall progress:` lines.
@@ -99,7 +99,7 @@ gcc -O2 -Wall -o encode.exe encode.c
 
 ## 简介
 
-Dolby Encoding Engine GUI 是一个基于 Electron + Vue 3 的桌面工具，用来封装 Dolby 官方命令行编码器 `encode.exe`。它提供简单的图形界面，用于选择输入/输出文件、切换编码格式、实时查看日志，并根据编码器输出的进度信息更新进度条。
+Dolby Encoding Engine GUI 是一个基于 Electron + Vue 3 的桌面工具，用来封装命令行桥接程序 `encode.exe`。该程序并非 Dolby 官方编码器，而是将参数转发给官方的 Dolby `dee.exe` 套件。GUI 提供简单的图形界面，用于选择输入/输出文件、切换编码格式、实时查看日志，并根据编码器输出的进度信息更新进度条。
 
 ## 功能亮点
 
@@ -126,7 +126,7 @@ Dolby Encoding Engine GUI 是一个基于 Electron + Vue 3 的桌面工具，用
 - `src/`：Vue 前端代码（`App.vue`、表单、IPC 监听）。
 - `src/background.js`：Electron 主进程，负责窗口管理、菜单、日志转发、进度事件。
 - `preload.js`：向渲染进程暴露受限的 `ipcRenderer` API。
-- `encode.c`：命令行核心源码，用于编译 `encode.exe`，负责保存/加载参数。
+- `encode.c`：命令行桥接源码，用于编译辅助程序 `encode.exe`，负责保存/加载参数并调用官方 `dee.exe`。
 - `last_params.txt`：运行时生成的参数缓存文件（位于项目根目录）。
 
 ## 开发与运行步骤
@@ -135,7 +135,7 @@ Dolby Encoding Engine GUI 是一个基于 Electron + Vue 3 的桌面工具，用
    ```bash
    npm install
    ```
-2. 将 `encode.exe`、`encode.c`（可选，用于重新编译）以及所需资源放在仓库根目录 `dolby-encoder-gui\`。
+2. 将辅助程序 `encode.exe`、`encode.c`（可选，用于重新编译）、官方 Dolby `dee.exe` 以及所需资源放在仓库根目录 `dolby-encoder-gui\`。
 3. （可选）若 `encode.exe` 位于其他目录，设置环境变量：
    ```cmd
    set ENCODE_PATH=C:\路径\encode.exe
@@ -173,7 +173,7 @@ gcc -O2 -Wall -o encode.exe encode.c
 2. 选择 ADM WAV 输入文件和输出保存路径。
 3. 切换需要的编码类型（Atmos EC3 或 Atmos M4A）。
 4. 如需可填写起始/结束时间和首尾静音时长。
-5. 点击 **开始编码**，程序会携带参数调用 `encode.exe`。
+5. 点击 **开始编码**，程序会携带参数调用辅助程序 `encode.exe`，随后由它转发至官方 `dee.exe` 执行编码。
 6. 日志与进度：
    - 日志实时显示。
    - 当日志出现 `Overall progress:` 时，进度条会同步更新。
@@ -182,7 +182,7 @@ gcc -O2 -Wall -o encode.exe encode.c
 
 ## 注意事项
 
-- 请确保 `encode.exe` 能访问到 `encode.c` 中引用的 Dolby XML 模板路径。
+- 请确保辅助程序 `encode.exe` 以及官方 `dee.exe` 能访问到 `encode.c` 中引用的 Dolby XML 模板路径。
 - `last_params.txt` 存放在项目根目录，可删除以清空历史记录。
 - 如果进度条始终为 0%，请确认编码日志仍包含 `Overall progress:` 字样。
 - 应用默认语言为英文，可通过菜单或快捷键切换至中文。
