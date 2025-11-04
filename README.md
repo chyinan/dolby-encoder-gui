@@ -15,6 +15,12 @@ Dolby Encoding Engine GUI is a lightweight Electron + Vue 3 desktop helper that 
 - **Language toggle** (English / 中文) via the application menu and shortcuts (`Ctrl/Cmd+Shift+E` / `Ctrl/Cmd+Shift+C`).
 - **Configurable encoder path** via the `ENCODE_PATH` environment variable.
 
+## Screenshots
+
+![English UI](./screenshot_EN.png)
+
+![中文界面](./screenshot_CN.png)
+
 ## Prerequisites
 
 - **Node.js** 16 or newer (recommended) with npm.
@@ -179,28 +185,3 @@ gcc -O2 -Wall -o encode.exe encode.c
 - 如果进度条始终为 0%，请确认编码日志仍包含 `Overall progress:` 字样。
 - 应用默认语言为英文，可通过菜单或快捷键切换至中文。
 - Dolby 工具目录默认指向 `D:\Dolby_Encoding_Engine`，如有不同安装位置，请通过 **设置** 按钮或 `DEE_ROOT` 环境变量修改。
-
-# dolby-encoder-gui
-
-## Project setup
-```
-npm install
-```
-
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
-
-### Compiles and minifies for production
-```
-npm run build
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
