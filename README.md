@@ -95,7 +95,7 @@ gcc -O2 -Wall -o encode.exe encode.c
 
 ---
 
-# Dolby Encoding Engine GUI（中文版）
+# Dolby Encoding Engine GUI
 
 ## 简介
 
