@@ -12,7 +12,7 @@ Dolby Encoding Engine GUI is a lightweight Electron + Vue 3 desktop helper that 
 - **Progress bar** that parses `Overall progress: <value>` from encoder logs.
 - **Parameter persistence** through `last_params.txt` stored in the project root.
 - **Configurable external Dolby engine path** stored in a settings dialog (backed by `settings.json`).
-- **Language toggle** (English / 中文) via the application menu and shortcuts (`Ctrl/Cmd+Shift+E` / `Ctrl/Cmd+Shift+C`).
+- **Language toggle** (English / Chinese) via the application menu and shortcuts (`Ctrl/Cmd+Shift+E` / `Ctrl/Cmd+Shift+C`).
 - **Configurable encoder path** via the `ENCODE_PATH` environment variable.
 
 ## Screenshots
@@ -42,7 +42,7 @@ Dolby Encoding Engine GUI is a lightweight Electron + Vue 3 desktop helper that 
 2. Place the helper `encode.exe`, `encode.c` (optional for rebuilding), the official Dolby `dee.exe` binaries, and any required Dolby assets in the repository root (`dolby-encoder-gui/`).
 3. (Optional) Define `ENCODE_PATH` if `encode.exe` lives elsewhere:
    ```cmd
-   set ENCODE_PATH=C:\path\to\encode.exe
+   set ENCODE_PATH=C:\path\to\encode.exe # Path for reference only; use your actual location
    ```
 4. Start the Electron development server:
    ```bash
@@ -60,14 +60,14 @@ If you modify `encode.c`, rebuild the executable in the project root:
 ### Using MSVC (Visual Studio Build Tools)
 
 ```cmd
-cd /d D:\Dolby_Encoding_Engine\dolby-encoder-gui
+cd /d D:\Dolby_Encoding_Engine\dolby-encoder-gui # Path for reference only; use your actual location
 cl /W4 /O2 /Fe:encode.exe encode.c
 ```
 
 ### Using MinGW-w64 (GCC)
 
 ```bash
-cd /d D:\Dolby_Encoding_Engine\dolby-encoder-gui
+cd /d D:\Dolby_Encoding_Engine\dolby-encoder-gui # Path for reference only; use your actual location
 gcc -O2 -Wall -o encode.exe encode.c
 ```
 
@@ -138,7 +138,7 @@ Dolby Encoding Engine GUI 是一个基于 Electron + Vue 3 的桌面工具，用
 2. 将辅助程序 `encode.exe`、`encode.c`（可选，用于重新编译）、官方 Dolby `dee.exe` 以及所需资源放在仓库根目录 `dolby-encoder-gui\`。
 3. （可选）若 `encode.exe` 位于其他目录，设置环境变量：
    ```cmd
-   set ENCODE_PATH=C:\路径\encode.exe
+   set ENCODE_PATH=C:\路径\encode.exe # 路径仅供参考，请以实际为准
    ```
 4. 启动开发模式：
    ```bash
@@ -156,14 +156,14 @@ Dolby Encoding Engine GUI 是一个基于 Electron + Vue 3 的桌面工具，用
 ### MSVC（Visual Studio Build Tools）
 
 ```cmd
-cd /d D:\Dolby_Encoding_Engine\dolby-encoder-gui
+cd /d D:\Dolby_Encoding_Engine\dolby-encoder-gui # 路径仅供参考，请以实际为准
 cl /W4 /O2 /Fe:encode.exe encode.c
 ```
 
 ### MinGW-w64（GCC）
 
 ```bash
-cd /d D:\Dolby_Encoding_Engine\dolby-encoder-gui
+cd /d D:\Dolby_Encoding_Engine\dolby-encoder-gui # 路径仅供参考，请以实际为准
 gcc -O2 -Wall -o encode.exe encode.c
 ```
 
