@@ -8,6 +8,13 @@ import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 
 const isDevelopment = Boolean(process.env.WEBPACK_DEV_SERVER_URL)
 
+const getAssetPath = (...segments) => {
+  if (isDevelopment) {
+    return path.join(process.cwd(), ...segments)
+  }
+  return path.join(process.resourcesPath, ...segments)
+}
+
 const resolveConfigPath = () => path.join(app.getPath('userData'), 'settings.json')
 let settings = {
   deeRoot: process.env.DEE_ROOT || process.env.DOLBY_BASE_PATH || process.env.DOLBY_ROOT || '',
@@ -201,9 +208,12 @@ const emitProgress = (text) => {
 async function createWindow() {
   loadSettings()
 
+  const iconPath = getAssetPath('logo.png')
+
   mainWindow = new BrowserWindow({
     width: 800,
     height: 900,
+    icon: fs.existsSync(iconPath) ? iconPath : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,

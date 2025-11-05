@@ -9,6 +9,10 @@ module.exports = defineConfig({
       builderOptions: {
         appId: 'com.dolby.encoder.gui',
         productName: 'Dolby Encoding Engine',
+        icon: 'logo.png',
+        win: {
+          icon: 'logo.png'
+        },
         extraResources: [
           {
             from: 'encode.exe',
@@ -21,6 +25,10 @@ module.exports = defineConfig({
           {
             from: 'xml_templates',
             to: 'xml_templates'
+          },
+          {
+            from: 'logo.png',
+            to: 'logo.png'
           }
         ]
       }
