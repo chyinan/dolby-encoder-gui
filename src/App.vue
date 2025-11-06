@@ -14,7 +14,11 @@
         </el-form-item>
 
         <el-form-item :label="t('outputFile')">
-          <el-input v-model="form.outputFile" :placeholder="defaultOutputFile"></el-input>
+          <el-input
+            v-model="form.outputFile"
+            :placeholder="defaultOutputFile"
+            @input="handleOutputInput"
+          ></el-input>
           <el-button @click="selectOutputFile" style="margin-top:8px">{{ t('browse') }}</el-button>
         </el-form-item>
 
@@ -84,7 +88,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 // 注意：window.ipcRenderer 将通过 preload.js 暴露
@@ -218,6 +222,9 @@ const form = reactive({
   appendSilence: '',
 })
 
+const outputAutoMode = ref(true)
+let programmaticOutputUpdate = false
+
 const hasIllegalPathChars = (value) => {
   if (typeof value !== 'string') return false
   return /"/.test(value)
@@ -246,6 +253,10 @@ watch(() => form.outputFile, (newVal) => {
   if (newVal === lastValidOutputPath.value) return
   if (!newVal) {
     lastValidOutputPath.value = ''
+    if (!programmaticOutputUpdate) {
+      outputAutoMode.value = true
+      synchronizeAutoOutput()
+    }
     return
   }
   if (hasIllegalPathChars(newVal)) {
@@ -253,8 +264,39 @@ watch(() => form.outputFile, (newVal) => {
     form.outputFile = lastValidOutputPath.value
   } else {
     lastValidOutputPath.value = newVal
+    if (!programmaticOutputUpdate && newVal !== autoOutputPath?.value) {
+      outputAutoMode.value = false
+    }
   }
 })
+
+const handleOutputInput = () => {
+  if (!programmaticOutputUpdate) {
+    outputAutoMode.value = false
+  }
+}
+
+const SelectedLanguage = computed(() => lang.value)
+
+const translateConsoleOutput = (text) => {
+  if (SelectedLanguage.value !== 'en' || typeof text !== 'string') {
+    return text
+  }
+
+  const replacements = [
+    { pattern: /使用 Dolby Encoding Engine 路径/g, replacement: 'Using Dolby Encoding Engine path' },
+    { pattern: /已加载上次操作参数/g, replacement: 'Loaded last parameters' },
+    { pattern: /已加载上一次操作参数/g, replacement: 'Loaded last parameters' },
+    { pattern: /编码完成，退出码:/g, replacement: 'Encoding finished, exit code:' },
+  ]
+
+  let output = text
+  replacements.forEach(({ pattern, replacement }) => {
+    output = output.replace(pattern, replacement)
+  })
+
+  return output
+}
 
 const logOutput = ref('')
 const progress = ref(0)
@@ -272,13 +314,74 @@ const clearLog = () => {
 
 const currentSettings = ref({ deeRoot: '', language: lang.value })
 
+const getOutputExtensionByChoice = (choice) => {
+  if (choice === 1) return 'ec3'
+  if (choice === 2) return 'm4a'
+  if (choice === 3) return 'mlp'
+  if (choice === 4) return 'm4a'
+  return 'ec3'
+}
+
 const defaultOutputFile = computed(() => {
-  if (form.choice === 1) return 'D:\\atmos.ec3'
-  if (form.choice === 2) return 'D:\\atmos.m4a'
-  if (form.choice === 3) return 'D:\\atmos.mlp'
-  if (form.choice === 4) return 'D:\\atmos_bluray.m4a'
-  return 'D:\\atmos.ec3'
+  const extension = getOutputExtensionByChoice(form.choice)
+  return `D:\\atmos.${extension}`
 })
+
+const deriveAutoOutputPath = (inputPath, choice) => {
+  if (typeof inputPath !== 'string' || inputPath.length === 0) {
+    return ''
+  }
+
+  const lastBackslash = inputPath.lastIndexOf('\\')
+  const lastSlash = inputPath.lastIndexOf('/')
+  const separatorIndex = Math.max(lastBackslash, lastSlash)
+  const directory = separatorIndex >= 0 ? inputPath.slice(0, separatorIndex) : ''
+  const fileName = separatorIndex >= 0 ? inputPath.slice(separatorIndex + 1) : inputPath
+  const lastDot = fileName.lastIndexOf('.')
+  const baseName = lastDot > 0 ? fileName.slice(0, lastDot) : fileName
+  const effectiveBase = baseName || 'atmos'
+  const extension = getOutputExtensionByChoice(choice)
+
+  if (!directory) {
+    return `${effectiveBase}.${extension}`
+  }
+
+  const needsSeparator = !directory.endsWith('\\') && !directory.endsWith('/')
+  const separator = needsSeparator ? '\\' : ''
+  return `${directory}${separator}${effectiveBase}.${extension}`
+}
+
+const autoOutputPath = computed(() => deriveAutoOutputPath(form.inputFile, form.choice))
+
+const synchronizeAutoOutput = () => {
+  if (!outputAutoMode.value) return
+  const targetPath = autoOutputPath.value
+  if (!targetPath) return
+  if (form.outputFile === targetPath) return
+  programmaticOutputUpdate = true
+  form.outputFile = targetPath
+  nextTick(() => {
+    programmaticOutputUpdate = false
+  })
+}
+
+watch([() => form.inputFile, () => form.choice], () => {
+  synchronizeAutoOutput()
+}, { immediate: true })
+
+const buildSafeOutputPath = (finalPath, choice) => {
+  if (!finalPath) return null
+  const extension = getOutputExtensionByChoice(choice)
+  const lastBackslash = finalPath.lastIndexOf('\\')
+  const lastSlash = finalPath.lastIndexOf('/')
+  const separatorIndex = Math.max(lastBackslash, lastSlash)
+  const directory = separatorIndex >= 0 ? finalPath.slice(0, separatorIndex) : ''
+  const needsSeparator = directory && !directory.endsWith('\\') && !directory.endsWith('/')
+  const separator = needsSeparator ? '\\' : ''
+  const dirPart = directory ? `${directory}${separator}` : ''
+  const uniqueSuffix = Date.now().toString(36)
+  return `${dirPart}dolby_auto_output_${uniqueSuffix}.${extension}`
+}
 
 let progressHideTimer = null
 const scheduleHideProgress = () => {
@@ -319,9 +422,10 @@ onMounted(() => {
         }
       })
     ipcRenderer.on('console-output', (event, data) => {
-      logOutput.value += data + '\n'
-      if (typeof data === 'string') {
-        const match = data.match(/Overall progress:\s*([0-9]+(?:\.[0-9]+)?)/gi)
+      const translated = translateConsoleOutput(data)
+      logOutput.value += translated + '\n'
+      if (typeof translated === 'string') {
+        const match = translated.match(/Overall progress:\s*([0-9]+(?:\.[0-9]+)?)/gi)
         if (match) {
           const value = Number(match[0].split(':')[1].trim())
           if (form.choice === 4 && !postProcessing.value && value >= 99) {
@@ -334,11 +438,11 @@ onMounted(() => {
             }
           }
         }
-        const matchMissing = data.match(/Storage:\s*File\s+"(.+?)"\s+does\s+not\s+exist/i)
+        const matchMissing = translated.match(/Storage:\s*File\s+"(.+?)"\s+does\s+not\s+exist/i)
         if (matchMissing) {
           lastErrorIsMissingFile.value = true
         }
-        const trimmed = data.trim()
+        const trimmed = translated.trim()
         if (trimmed.includes('dee 完成 MLP 导出')) {
           enterPostProcessing()
         }
@@ -350,8 +454,9 @@ onMounted(() => {
     ipcRenderer.on('encoding-complete', (event, code) => {
       isEncoding.value = false
       exitPostProcessing()
-      ElMessage.success(`编码完成，退出码: ${code}`)
-      logOutput.value += `编码完成，退出码: ${code}\n`
+      const completionMessage = `${t('encodingComplete')}${code}`
+      ElMessage.success(completionMessage)
+      logOutput.value += `${completionMessage}\n`
       lastErrorIsMissingFile.value = false
       progress.value = 100
       showProgress.value = true
@@ -441,6 +546,9 @@ const selectInputFile = async () => {
   })
   if (result && !result.canceled && result.filePaths.length > 0) {
     form.inputFile = result.filePaths[0]
+    if (outputAutoMode.value) {
+      synchronizeAutoOutput()
+    }
   }
 }
 
@@ -479,6 +587,7 @@ const selectOutputFile = async () => {
   })
   if (result && !result.canceled && result.filePath) {
     form.outputFile = result.filePath
+    outputAutoMode.value = false
   }
 }
 
@@ -552,10 +661,21 @@ const startEncoding = async () => {
   }
 
   logOutput.value = '' // 清空日志
-  const currentOutputFile = form.outputFile || defaultOutputFile.value;
+  const resolvedFinalOutput = (() => {
+    if (outputAutoMode.value) {
+      const candidate = form.outputFile || autoOutputPath.value
+      return candidate || defaultOutputFile.value
+    }
+    return form.outputFile || defaultOutputFile.value
+  })()
+
+  const useAutoOutputStrategy = outputAutoMode.value && Boolean(resolvedFinalOutput)
+  const safeOutputPath = useAutoOutputStrategy ? buildSafeOutputPath(resolvedFinalOutput, form.choice) : null
+  const encodeOutputFile = useAutoOutputStrategy && safeOutputPath ? safeOutputPath : resolvedFinalOutput
+
   exitPostProcessing()
 
-  if (hasIllegalPathChars(form.inputFile) || hasIllegalPathChars(currentOutputFile)) {
+  if (hasIllegalPathChars(form.inputFile) || hasIllegalPathChars(resolvedFinalOutput)) {
     ElMessage.error(t('pathIllegalChars'))
     return
   }
@@ -583,8 +703,16 @@ const startEncoding = async () => {
     end: form.end,
     prependSilence: form.prependSilence,
     appendSilence: form.appendSilence,
-    outputFile: currentOutputFile,
+    outputFile: encodeOutputFile,
     inputFile: form.inputFile,
+  }
+
+  if (useAutoOutputStrategy && safeOutputPath) {
+    if (SelectedLanguage.value === 'zh') {
+      logOutput.value += `使用临时输出文件: ${safeOutputPath}\n完成后将重命名为: ${resolvedFinalOutput}\n`
+    } else {
+      logOutput.value += `Using temporary output: ${safeOutputPath}\nWill rename to: ${resolvedFinalOutput} after completion\n`
+    }
   }
 
   const args = [
@@ -596,7 +724,7 @@ const startEncoding = async () => {
     paramsToEncode.outputFile,
     paramsToEncode.inputFile,
   ]
-  
+
   isEncoding.value = true
   if (progressHideTimer) {
     clearTimeout(progressHideTimer)
@@ -606,7 +734,12 @@ const startEncoding = async () => {
   showProgress.value = true
   ElMessage.info(t('encodingStarting'))
   try {
-    await ipcRenderer.invoke('run-c-program', args)
+    const payload = {
+      args,
+      finalOutputPath: useAutoOutputStrategy ? resolvedFinalOutput : null,
+      safeOutputPath: useAutoOutputStrategy ? safeOutputPath : null,
+    }
+    await ipcRenderer.invoke('run-c-program', payload)
     // C 程序输出将在 'console-output' 事件中接收
   } catch (error) {
     ElMessage.error(`${t('startFailed')}${error.message}`)
@@ -660,7 +793,10 @@ const loadLastParams = async () => {
       form.prependSilence = params.prepend_silence
       form.appendSilence = params.append_silence
       // 确保 output_file 和 input_file 有值才更新，否则保持当前或默认
-      if (params.output_file) form.outputFile = params.output_file
+      if (params.output_file) {
+        form.outputFile = params.output_file
+        outputAutoMode.value = false
+      }
       if (params.input_file) form.inputFile = params.input_file
       
       ElMessage.success(t('loadedLastOk'))

@@ -126,6 +126,197 @@ const C_PROGRAM_PATH = process.env.ENCODE_PATH || path.join(__dirname, '..', 'en
 // 状态文件默认放在项目根（若需要也可改为其他位置）
 const STATE_FILE_PATH = path.join(__dirname, '..', 'last_params.txt')
 
+const TEMP_ADM_FILENAME = 'ADM.wav'
+
+const prepareTemporaryAdmRename = (inputPath) => {
+  if (typeof inputPath !== 'string' || inputPath.length === 0) {
+    return null
+  }
+
+  if (!fs.existsSync(inputPath)) {
+    throw new Error(`输入文件不存在: ${inputPath}`)
+  }
+
+  const extension = path.extname(inputPath).toLowerCase()
+  if (extension !== '.wav') {
+    return null
+  }
+
+  const baseName = path.basename(inputPath)
+  if (baseName.toLowerCase() === TEMP_ADM_FILENAME.toLowerCase()) {
+    return null
+  }
+
+  const directory = path.dirname(inputPath)
+  const tempPath = path.join(directory, TEMP_ADM_FILENAME)
+  let backupPath = null
+  let restored = false
+
+  try {
+    if (fs.existsSync(tempPath)) {
+      const uniqueSuffix = `${Date.now()}_${Math.random().toString(16).slice(2, 8)}`
+      backupPath = path.join(directory, `ADM__backup_${uniqueSuffix}.wav`)
+      fs.renameSync(tempPath, backupPath)
+      console.log(`[TEMP ADM] Existing ADM.wav moved to backup: ${backupPath}`)
+    }
+
+    fs.renameSync(inputPath, tempPath)
+    console.log(`[TEMP ADM] Renamed input file "${inputPath}" -> "${tempPath}" for processing.`)
+  } catch (error) {
+    console.error('[TEMP ADM] Failed to perform temporary rename:', error)
+    if (backupPath && fs.existsSync(backupPath)) {
+      try {
+        fs.renameSync(backupPath, tempPath)
+        console.log('[TEMP ADM] Restored original ADM.wav after rename failure.')
+      } catch (restoreErr) {
+        console.error('[TEMP ADM] Failed to restore original ADM.wav after rename failure:', restoreErr)
+      }
+    }
+    throw error
+  }
+
+  return {
+    effectivePath: tempPath,
+    restore: () => {
+      if (restored) return
+      restored = true
+
+      try {
+        if (fs.existsSync(tempPath)) {
+          fs.renameSync(tempPath, inputPath)
+          console.log(`[TEMP ADM] Restored input file name "${tempPath}" -> "${inputPath}".`)
+        } else if (!fs.existsSync(inputPath)) {
+          console.warn(`[TEMP ADM] Temporary ADM.wav not found; original path "${inputPath}" left unchanged.`)
+        }
+      } catch (restoreInputErr) {
+        console.error('[TEMP ADM] Failed to restore original ADM BWF name:', restoreInputErr)
+      }
+
+      if (backupPath) {
+        try {
+          if (fs.existsSync(backupPath)) {
+            fs.renameSync(backupPath, tempPath)
+            console.log(`[TEMP ADM] Restored pre-existing ADM.wav from backup -> "${tempPath}".`)
+          }
+        } catch (restoreBackupErr) {
+          console.error('[TEMP ADM] Failed to restore previous ADM.wav file from backup:', restoreBackupErr)
+        }
+      }
+    },
+  }
+}
+
+const ensureDirectoryExists = (dirPath) => {
+  if (!dirPath) return
+  const normalized = path.normalize(dirPath)
+  if (/^[A-Za-z]:\\?$/.test(normalized)) {
+    // 根目录无需创建，也避免 EPERM
+    return
+  }
+  try {
+    fs.mkdirSync(dirPath, { recursive: true })
+  } catch (error) {
+    if (error && error.code !== 'EEXIST') {
+      throw error
+    }
+  }
+}
+
+const updateLastParamsOutputPath = (newPath) => {
+  if (typeof newPath !== 'string' || newPath.length === 0) return
+  if (!fs.existsSync(STATE_FILE_PATH)) return
+  try {
+    const raw = fs.readFileSync(STATE_FILE_PATH, 'utf-8')
+    if (!raw.includes('output_file=')) return
+    const updated = raw.replace(/^(output_file=).*$/m, `$1${newPath}`)
+    fs.writeFileSync(STATE_FILE_PATH, updated, 'utf-8')
+  } catch (error) {
+    console.warn('[AUTO OUTPUT] Failed to update last_params output path:', error)
+  }
+}
+
+const createAutoOutputPlan = (finalPath, safePath) => {
+  if (typeof finalPath !== 'string' || finalPath.length === 0) return null
+  if (typeof safePath !== 'string' || safePath.length === 0) return null
+  if (finalPath === safePath) return null
+
+  ensureDirectoryExists(path.dirname(safePath))
+
+  const plan = {
+    finalPath,
+    safePath,
+    backupPath: null,
+    applied: false,
+    apply() {
+      if (!fs.existsSync(this.safePath)) {
+        throw new Error(`临时输出文件不存在: ${this.safePath}`)
+      }
+
+      const finalDir = path.dirname(this.finalPath)
+      if (finalDir) {
+        ensureDirectoryExists(finalDir)
+      }
+
+      try {
+        if (fs.existsSync(this.finalPath)) {
+          const backupSuffix = Date.now().toString(36)
+          this.backupPath = `${this.finalPath}.backup_${backupSuffix}`
+          fs.renameSync(this.finalPath, this.backupPath)
+          console.log(`[AUTO OUTPUT] Existing final output backed up to: ${this.backupPath}`)
+        }
+
+        fs.renameSync(this.safePath, this.finalPath)
+        console.log(`[AUTO OUTPUT] Output renamed to final path: ${this.finalPath}`)
+        this.applied = true
+        if (this.backupPath && fs.existsSync(this.backupPath)) {
+          fs.rmSync(this.backupPath, { force: true })
+          this.backupPath = null
+        }
+        updateLastParamsOutputPath(this.finalPath)
+      } catch (error) {
+        if (this.backupPath && fs.existsSync(this.backupPath)) {
+          try {
+            fs.renameSync(this.backupPath, this.finalPath)
+          } catch (restoreErr) {
+            console.error('[AUTO OUTPUT] Failed to restore original output file from backup:', restoreErr)
+          }
+          this.backupPath = null
+        }
+        // 尽力清理临时文件，避免遗留
+        if (fs.existsSync(this.safePath)) {
+          try {
+            fs.rmSync(this.safePath, { force: true })
+          } catch (removeErr) {
+            console.error('[AUTO OUTPUT] Failed to remove temporary output after rename failure:', removeErr)
+          }
+        }
+        throw error
+      }
+    },
+    cleanupOnFailure() {
+      if (this.backupPath && fs.existsSync(this.backupPath)) {
+        try {
+          fs.renameSync(this.backupPath, this.finalPath)
+          console.log('[AUTO OUTPUT] Restored original final output from backup after failure.')
+        } catch (restoreErr) {
+          console.error('[AUTO OUTPUT] Failed to restore original output during cleanup:', restoreErr)
+        }
+        this.backupPath = null
+      }
+      if (fs.existsSync(this.safePath)) {
+        try {
+          fs.rmSync(this.safePath, { force: true })
+          console.log('[AUTO OUTPUT] Removed temporary output file after failure.')
+        } catch (removeErr) {
+          console.error('[AUTO OUTPUT] Failed to remove temporary output file during cleanup:', removeErr)
+        }
+      }
+    },
+  }
+
+  return plan
+}
+
 let mainWindow
 let currentProcessInfo = null
 
@@ -295,18 +486,83 @@ app.on('activate', () => {
 })
 
 // IPC: 运行 C 程序
-ipcMain.handle('run-c-program', async (event, args) => {
-  console.log('Renderer requested to run C program with args:', args)
+ipcMain.handle('run-c-program', async (event, rawPayload) => {
+  let spawnArgs
+  let finalOutputTarget = null
+  let safeOutputOverride = null
+
+  if (Array.isArray(rawPayload)) {
+    spawnArgs = [...rawPayload]
+  } else if (rawPayload && typeof rawPayload === 'object') {
+    spawnArgs = Array.isArray(rawPayload.args) ? [...rawPayload.args] : []
+    if (typeof rawPayload.finalOutputPath === 'string') {
+      finalOutputTarget = rawPayload.finalOutputPath
+    }
+    if (typeof rawPayload.safeOutputPath === 'string') {
+      safeOutputOverride = rawPayload.safeOutputPath
+    }
+  } else {
+    spawnArgs = []
+  }
+
+  if (!Array.isArray(spawnArgs)) {
+    spawnArgs = []
+  }
+
+  if (safeOutputOverride && spawnArgs.length >= 2) {
+    spawnArgs[spawnArgs.length - 2] = safeOutputOverride
+  }
+
+  console.log('Renderer requested to run C program with args:', spawnArgs)
+
+  const originalInputPath = spawnArgs.length > 0 ? spawnArgs[spawnArgs.length - 1] : ''
+  let renameHandle = null
+  let outputAutoPlan = null
+
+  const cleanupRename = () => {
+    if (!renameHandle) return
+    try {
+      renameHandle.restore()
+    } catch (cleanupErr) {
+      console.error('[TEMP ADM] Cleanup encountered an error:', cleanupErr)
+    } finally {
+      renameHandle = null
+    }
+  }
+
+  const cleanupOutputPlan = () => {
+    if (!outputAutoPlan) return
+    try {
+      outputAutoPlan.cleanupOnFailure()
+    } catch (cleanupErr) {
+      console.error('[AUTO OUTPUT] Cleanup encountered an error:', cleanupErr)
+    } finally {
+      outputAutoPlan = null
+    }
+  }
+
   return new Promise((resolve, reject) => {
+    let settled = false
+    const safeResolve = (value) => {
+      if (settled) return
+      settled = true
+      resolve(value)
+    }
+    const safeReject = (error) => {
+      if (settled) return
+      settled = true
+      reject(error)
+    }
+
     if (currentProcessInfo && currentProcessInfo.process && currentProcessInfo.process.exitCode === null) {
       const err = new Error('编码任务正在进行中，请先取消当前任务。')
       console.warn(err.message)
-      reject(err)
+      safeReject(err)
       return
     }
     if (!fs.existsSync(C_PROGRAM_PATH)) {
       console.error('C program not found:', C_PROGRAM_PATH)
-      reject(new Error(`C 程序未找到: ${C_PROGRAM_PATH}`))
+      safeReject(new Error(`C 程序未找到: ${C_PROGRAM_PATH}`))
       return
     }
     console.log('C program path confirmed:', C_PROGRAM_PATH)
@@ -315,7 +571,52 @@ ipcMain.handle('run-c-program', async (event, args) => {
     if (settings && settings.deeRoot) {
       env.DEE_ROOT = settings.deeRoot
     }
-    const cProcess = spawn(C_PROGRAM_PATH, args, { cwd: path.dirname(C_PROGRAM_PATH), env })
+    try {
+      if (finalOutputTarget) {
+        const safeCandidate = spawnArgs.length > 1 ? spawnArgs[spawnArgs.length - 2] : null
+        if (typeof safeCandidate === 'string' && safeCandidate.length > 0 && safeCandidate !== finalOutputTarget) {
+          outputAutoPlan = createAutoOutputPlan(finalOutputTarget, safeCandidate)
+          if (outputAutoPlan && fs.existsSync(outputAutoPlan.safePath)) {
+            try {
+              fs.rmSync(outputAutoPlan.safePath, { force: true })
+              console.log('[AUTO OUTPUT] Cleared previous temporary output file:', outputAutoPlan.safePath)
+            } catch (removeErr) {
+              console.warn('[AUTO OUTPUT] Failed to clear previous temporary output file:', removeErr)
+            }
+          }
+          if (outputAutoPlan) {
+            console.log(`[AUTO OUTPUT] Temporary output path "${outputAutoPlan.safePath}" will be renamed to "${outputAutoPlan.finalPath}" after encoding.`)
+          }
+        }
+      }
+    } catch (planError) {
+      cleanupOutputPlan()
+      safeReject(planError)
+      return
+    }
+    try {
+      if (typeof originalInputPath === 'string' && originalInputPath.length > 0) {
+        renameHandle = prepareTemporaryAdmRename(originalInputPath)
+        if (renameHandle && renameHandle.effectivePath) {
+          spawnArgs[spawnArgs.length - 1] = renameHandle.effectivePath
+        }
+      }
+    } catch (renameError) {
+      cleanupOutputPlan()
+      cleanupRename()
+      safeReject(renameError)
+      return
+    }
+
+    let cProcess
+    try {
+      cProcess = spawn(C_PROGRAM_PATH, spawnArgs, { cwd: path.dirname(C_PROGRAM_PATH), env })
+    } catch (spawnError) {
+      cleanupRename()
+      cleanupOutputPlan()
+      safeReject(spawnError)
+      return
+    }
     const processInfo = { process: cProcess, wasKilled: false }
     currentProcessInfo = processInfo
 
@@ -336,20 +637,40 @@ ipcMain.handle('run-c-program', async (event, args) => {
     cProcess.on('close', (code, signal) => {
       console.log(`C program exited with code: ${code}, signal: ${signal}`)
       const wasKilled = processInfo.wasKilled || Boolean(signal)
+      cleanupRename()
       if (currentProcessInfo && currentProcessInfo.process === cProcess) {
         currentProcessInfo = null
       }
       if (wasKilled) {
+        cleanupOutputPlan()
         mainWindow.webContents.send('encoding-cancelled', { code, signal })
-        resolve({ cancelled: true, code, signal })
+        safeResolve({ cancelled: true, code, signal })
         return
       }
       if (code !== 0) {
+        cleanupOutputPlan()
         mainWindow.webContents.send('encoding-error', `C 程序退出码: ${code}`)
-        reject(new Error(`C 程序退出码: ${code}`))
+        safeReject(new Error(`C 程序退出码: ${code}`))
       } else {
+        try {
+          if (outputAutoPlan) {
+            const finalPath = outputAutoPlan.finalPath
+            outputAutoPlan.apply()
+            if (mainWindow) {
+              const infoMessage = `[AUTO OUTPUT] Final output path: ${finalPath}`
+              mainWindow.webContents.send('console-output', `${infoMessage}\n`)
+            }
+            outputAutoPlan = null
+          }
+        } catch (renameError) {
+          console.error('[AUTO OUTPUT] Failed to finalize output rename:', renameError)
+          cleanupOutputPlan()
+          mainWindow.webContents.send('encoding-error', `输出文件重命名失败: ${renameError.message}`)
+          safeReject(renameError)
+          return
+        }
         mainWindow.webContents.send('encoding-complete', code)
-        resolve({ cancelled: false, code })
+        safeResolve({ cancelled: false, code })
       }
     })
 
@@ -359,7 +680,9 @@ ipcMain.handle('run-c-program', async (event, args) => {
       if (currentProcessInfo && currentProcessInfo.process === cProcess) {
         currentProcessInfo = null
       }
-      reject(err)
+      cleanupRename()
+      cleanupOutputPlan()
+      safeReject(err)
     })
   })
 })
