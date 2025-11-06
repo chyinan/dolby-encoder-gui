@@ -7,6 +7,10 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <direct.h>
+#include <io.h>
+#endif
+#ifndef _WIN32
+#include <unistd.h>
 #endif
 
 static const char *DEFAULT_DEE_ROOT = "D:\\Dolby_Encoding_Engine";
@@ -19,6 +23,9 @@ static void ensure_parent_directory(const char *file_path);
 static void quote_argument(char *dest, size_t dest_size, const char *src);
 static void format_win32_error(DWORD error_code, char *buffer, size_t buffer_size);
 #endif
+static void replace_extension(const char *src, char *dest, size_t dest_size, const char *ext);
+static int file_exists(const char *path);
+static void remove_file_if_exists(const char *path);
 
 static int case_equal(const char *a, const char *b) {
     if (!a || !b) return 0;
@@ -147,6 +154,53 @@ static void ensure_parent_directory(const char *file_path) {
 #endif
 }
 
+static void replace_extension(const char *src, char *dest, size_t dest_size, const char *ext) {
+    if (!dest || dest_size == 0) return;
+    if (!src) {
+        dest[0] = '\0';
+        return;
+    }
+    copy_string(dest, dest_size, src);
+    normalize_slashes(dest);
+    const char *extension = ext ? ext : "";
+    char *dot = strrchr(dest, '.');
+    char *slash = strrchr(dest, '\\');
+    char *slash_alt = strrchr(dest, '/');
+    if (slash_alt && (!slash || slash_alt > slash)) slash = slash_alt;
+    if (!dot || (slash && dot < slash)) {
+        size_t len = strlen(dest);
+        size_t ext_len = strlen(extension);
+        if (len + ext_len < dest_size) {
+            strcat(dest, extension);
+        }
+        return;
+    }
+    *dot = '\0';
+    size_t len = strlen(dest);
+    size_t ext_len = strlen(extension);
+    if (len + ext_len < dest_size) {
+        strcat(dest, extension);
+    }
+    normalize_slashes(dest);
+}
+
+static int file_exists(const char *path) {
+    if (!path || !*path) return 0;
+#ifdef _WIN32
+    return _access(path, 0) == 0;
+#else
+    return access(path, F_OK) == 0;
+#endif
+}
+
+static void remove_file_if_exists(const char *path) {
+    if (!path || !*path) return;
+    if (!file_exists(path)) return;
+    if (remove(path) != 0) {
+        fprintf(stderr, "警告: 无法删除临时文件 %s (errno=%d)\n", path, errno);
+    }
+}
+
 
 static void copy_string(char *dest, size_t dest_size, const char *src) {
     if (!dest || dest_size == 0) {
@@ -236,7 +290,7 @@ void trim_newline(char *str) {
 
 // --------- 持久化上次操作参数的结构与函数 ---------
 typedef struct {
-    int choice; /* 1: ec3, 2: m4a */
+    int choice; /* 1: ec3, 2: m4a, 3: mlp, 4: ddp bluray */
     char start[64];
     char end[64];
     char prepend_silence[64];
@@ -326,9 +380,9 @@ void generate_xml(const char *template_xml, const char *temp_xml,
 
     while (fgets(line, sizeof(line), in)) {
         // 进入/离开 <encode_to_atmos_ddp> 区块
-        if (strstr(line, "<encode_to_atmos_ddp")) {
+        if (strstr(line, "<encode_to_atmos_ddp") || strstr(line, "<encode_to_dthd")) {
             in_encode_section = 1;
-        } else if (strstr(line, "</encode_to_atmos_ddp>")) {
+        } else if (strstr(line, "</encode_to_atmos_ddp>") || strstr(line, "</encode_to_dthd>")) {
             in_encode_section = 0;
         }
 
@@ -472,6 +526,16 @@ int main(int argc, char *argv[])
     char temp_dir_path[1024];
     char template_ec3_path[1024];
     char template_m4a_path[1024];
+    char template_mlp_path[1024];
+    char intermediate_mlp_path[512];
+    char intermediate_ddp_path[512];
+    char intermediate_ddp_alt_ec3[512];
+    char intermediate_ddp_alt_ddp[512];
+    char final_output_path[512];
+    char inter_mll_path[512];
+    char inter_log_path[512];
+    const char *dee_output_target = NULL;
+    int interactive_mode = 1;
     const char *template_xml = NULL;
     const char *state_file = "last_params.txt";
     LastParams last_params;
@@ -489,6 +553,7 @@ int main(int argc, char *argv[])
     build_path(temp_dir_path, sizeof(temp_dir_path), base_path, "DolbyTemp");
     build_path(template_ec3_path, sizeof(template_ec3_path), base_path, "xml_templates\\encode_to_atmos_ddp\\atmos_mezz_encode_to_atmos_ddp_ec3.xml");
     build_path(template_m4a_path, sizeof(template_m4a_path), base_path, "xml_templates\\encode_to_atmos_ddp\\atmos_mezz_encode_to_atmos_ddp_mp4.xml");
+    build_path(template_mlp_path, sizeof(template_mlp_path), base_path, "xml_templates\\encode_to_dthd\\atmos_mezz_encode_to_dthd_mlp.xml");
 
     printf("使用 Dolby Encoding Engine 路径: %s\n", base_path);
 
@@ -498,9 +563,13 @@ int main(int argc, char *argv[])
 
     // 初始化所有参数为空字符串，以便于后续逻辑判断
     start[0] = end[0] = prepend_silence[0] = append_silence[0] = output_file_buf[0] = input_file_buf[0] = '\0';
+    intermediate_mlp_path[0] = intermediate_ddp_path[0] = intermediate_ddp_alt_ec3[0] = intermediate_ddp_alt_ddp[0] = final_output_path[0] = '\0';
+    inter_mll_path[0] = inter_log_path[0] = '\0';
     choice = 0;
+    dee_output_target = NULL;
 
     if (argc > 1) {
+        interactive_mode = 0;
         // 从命令行参数解析
         choice = atoi(argv[1]);
         if (argc > 2 && strlen(argv[2]) > 0) copy_string(start, sizeof(start), argv[2]);
@@ -516,6 +585,10 @@ int main(int argc, char *argv[])
                  copy_string(output_file_buf, sizeof(output_file_buf), "D:\\atmos.ec3");
              } else if (choice == 2) {
                  copy_string(output_file_buf, sizeof(output_file_buf), "D:\\atmos.m4a");
+             } else if (choice == 3) {
+                 copy_string(output_file_buf, sizeof(output_file_buf), "D:\\atmos.mlp");
+             } else if (choice == 4) {
+                 copy_string(output_file_buf, sizeof(output_file_buf), "D:\\atmos_bluray.m4a");
              }
         }
         if (input_file_buf[0] == '\0') {
@@ -526,6 +599,29 @@ int main(int argc, char *argv[])
             ensure_extension(output_file_buf, sizeof(output_file_buf), ".ec3");
         } else if (choice == 2) {
             ensure_extension(output_file_buf, sizeof(output_file_buf), ".m4a");
+        } else if (choice == 3) {
+            ensure_extension(output_file_buf, sizeof(output_file_buf), ".mlp");
+        } else if (choice == 4) {
+            ensure_extension(output_file_buf, sizeof(output_file_buf), ".m4a");
+        }
+
+        copy_string(final_output_path, sizeof(final_output_path), output_file_buf);
+        if (choice == 4) {
+            replace_extension(final_output_path, intermediate_mlp_path, sizeof(intermediate_mlp_path), ".mlp");
+            replace_extension(final_output_path, intermediate_ddp_path, sizeof(intermediate_ddp_path), ".eb3");
+            replace_extension(final_output_path, intermediate_ddp_alt_ec3, sizeof(intermediate_ddp_alt_ec3), ".ec3");
+            replace_extension(final_output_path, intermediate_ddp_alt_ddp, sizeof(intermediate_ddp_alt_ddp), ".ddp");
+            replace_extension(intermediate_mlp_path, inter_mll_path, sizeof(inter_mll_path), ".mlp.mll");
+            replace_extension(intermediate_mlp_path, inter_log_path, sizeof(inter_log_path), ".mlp.log");
+            dee_output_target = intermediate_mlp_path;
+        } else {
+            intermediate_mlp_path[0] = '\0';
+            intermediate_ddp_path[0] = '\0';
+            intermediate_ddp_alt_ec3[0] = '\0';
+            intermediate_ddp_alt_ddp[0] = '\0';
+            inter_mll_path[0] = '\0';
+            inter_log_path[0] = '\0';
+            dee_output_target = output_file_buf;
         }
 
         printf("DEBUG: Parsed CLI args -> choice=%d, start='%s', end='%s', prepend='%s', append='%s', output='%s', input='%s'\n",
@@ -536,9 +632,13 @@ int main(int argc, char *argv[])
             template_xml = template_ec3_path;
         } else if (choice == 2) {
             template_xml = template_m4a_path;
+        } else if (choice == 3) {
+            template_xml = template_mlp_path;
+        } else if (choice == 4) {
+            template_xml = template_mlp_path;
         } else {
             fprintf(stderr, "错误: 无效的编码选项（%d）。\n", choice);
-            system("pause");
+            if (interactive_mode) system("pause");
             return 1;
         }
 
@@ -554,7 +654,9 @@ int main(int argc, char *argv[])
         printf("=============================\n");
         printf("1. ADM BWF 编码为 atmos.ec3\n");
         printf("2. ADM BWF 编码为 atmos.m4a\n");
-        printf("3. 重复上一次操作\n");
+        printf("3. ADM BWF 编码为 atmos.mlp\n");
+        printf("4. ADM BWF 编码为 7.1ch Dolby Digital Plus (Blu-ray)\n");
+        printf("5. 重复上一次操作\n");
         printf("0. 退出程序\n");
         printf("请输入选项: ");
 
@@ -570,8 +672,8 @@ int main(int argc, char *argv[])
             break;
         }
 
-        /* 如果选择 3：直接使用上次保存的参数并跳过交互 */
-        if (choice == 3) {
+        /* 如果选择 4：直接使用上次保存的参数并跳过交互 */
+        if (choice == 5) {
             if (!last_params.valid) {
                 printf("没有可用的上一次操作记录，无法重复。\n");
                 continue;
@@ -581,8 +683,18 @@ int main(int argc, char *argv[])
             copy_string(end, sizeof(end), last_params.end);
             copy_string(prepend_silence, sizeof(prepend_silence), last_params.prepend_silence);
             copy_string(append_silence, sizeof(append_silence), last_params.append_silence);
+            /* 使用上次保存的类型（如果有）作为本次的具体格式 */
+            choice = last_params.choice ? last_params.choice : 1;
             if (last_params.output_file[0]) {
                 copy_string(output_file_buf, sizeof(output_file_buf), last_params.output_file);
+            } else if (choice == 1) {
+                copy_string(output_file_buf, sizeof(output_file_buf), "D:\\atmos.ec3");
+            } else if (choice == 2) {
+                copy_string(output_file_buf, sizeof(output_file_buf), "D:\\atmos.m4a");
+            } else if (choice == 3) {
+                copy_string(output_file_buf, sizeof(output_file_buf), "D:\\atmos.mlp");
+            } else if (choice == 4) {
+                copy_string(output_file_buf, sizeof(output_file_buf), "D:\\atmos_bluray.m4a");
             } else {
                 copy_string(output_file_buf, sizeof(output_file_buf), "D:\\atmos.ec3");
             }
@@ -591,23 +703,29 @@ int main(int argc, char *argv[])
             } else {
                 copy_string(input_file_buf, sizeof(input_file_buf), "D:\\ADM.wav");
             }
-            /* 使用上次保存的类型（如果有）作为本次的具体格式 */
-            choice = last_params.choice ? last_params.choice : 1;
             if (last_params.template_xml[0]) {
                 template_xml = last_params.template_xml;
             } else if (choice == 1) {
                 template_xml = template_ec3_path;
             } else if (choice == 2) {
                 template_xml = template_m4a_path;
+            } else if (choice == 3) {
+                template_xml = template_mlp_path;
+            } else if (choice == 4) {
+                template_xml = template_mlp_path;
             }
             if (choice == 1) {
                 ensure_extension(output_file_buf, sizeof(output_file_buf), ".ec3");
             } else if (choice == 2) {
                 ensure_extension(output_file_buf, sizeof(output_file_buf), ".m4a");
+            } else if (choice == 3) {
+                ensure_extension(output_file_buf, sizeof(output_file_buf), ".mlp");
+            } else if (choice == 4) {
+                ensure_extension(output_file_buf, sizeof(output_file_buf), ".m4a");
             }
-                printf("使用上一次参数：choice=%d, start='%s', end='%s', prepend='%s', append='%s', out='%s'\n", choice, start, end, prepend_silence, append_silence, output_file_buf);
+            printf("使用上一次参数：choice=%d, start='%s', end='%s', prepend='%s', append='%s', out='%s'\n", choice, start, end, prepend_silence, append_silence, output_file_buf);
         } else {
-            /* 普通选项 1 或 2：交互式输入（回车表示空，保留模板默认） */
+            /* 普通选项 1、2、3 或 4：交互式输入（回车表示空，保留模板默认） */
             printf("请输入起始时间 (HH:MM:SS:FF / HH:MM:SS.xx，直接回车默认): ");
             if (fgets(start, sizeof(start), stdin)) trim_newline(start);
 
@@ -625,6 +743,10 @@ int main(int argc, char *argv[])
                     copy_string(output_file_buf, sizeof(output_file_buf), "D:\\atmos.ec3");
                 } else if (choice == 2) {
                     copy_string(output_file_buf, sizeof(output_file_buf), "D:\\atmos.m4a");
+                } else if (choice == 3) {
+                    copy_string(output_file_buf, sizeof(output_file_buf), "D:\\atmos.mlp");
+                } else if (choice == 4) {
+                    copy_string(output_file_buf, sizeof(output_file_buf), "D:\\atmos_bluray.m4a");
                 }
                 copy_string(input_file_buf, sizeof(input_file_buf), "D:\\ADM.wav");
         }
@@ -633,6 +755,10 @@ int main(int argc, char *argv[])
             template_xml = template_ec3_path;
         } else if (choice == 2) {
             template_xml = template_m4a_path;
+        } else if (choice == 3) {
+            template_xml = template_mlp_path;
+        } else if (choice == 4) {
+            template_xml = template_mlp_path;
         } else {
             printf("无效选项，请重新输入。\n");
             continue;
@@ -642,6 +768,29 @@ int main(int argc, char *argv[])
             ensure_extension(output_file_buf, sizeof(output_file_buf), ".ec3");
         } else if (choice == 2) {
             ensure_extension(output_file_buf, sizeof(output_file_buf), ".m4a");
+        } else if (choice == 3) {
+            ensure_extension(output_file_buf, sizeof(output_file_buf), ".mlp");
+        } else if (choice == 4) {
+            ensure_extension(output_file_buf, sizeof(output_file_buf), ".m4a");
+        }
+
+        copy_string(final_output_path, sizeof(final_output_path), output_file_buf);
+        if (choice == 4) {
+            replace_extension(final_output_path, intermediate_mlp_path, sizeof(intermediate_mlp_path), ".mlp");
+            replace_extension(final_output_path, intermediate_ddp_path, sizeof(intermediate_ddp_path), ".eb3");
+            replace_extension(final_output_path, intermediate_ddp_alt_ec3, sizeof(intermediate_ddp_alt_ec3), ".ec3");
+            replace_extension(final_output_path, intermediate_ddp_alt_ddp, sizeof(intermediate_ddp_alt_ddp), ".ddp");
+            replace_extension(intermediate_mlp_path, inter_mll_path, sizeof(inter_mll_path), ".mll");
+            replace_extension(intermediate_mlp_path, inter_log_path, sizeof(inter_log_path), ".mlp.log");
+            dee_output_target = intermediate_mlp_path;
+        } else {
+            intermediate_mlp_path[0] = '\0';
+            intermediate_ddp_path[0] = '\0';
+            intermediate_ddp_alt_ec3[0] = '\0';
+            intermediate_ddp_alt_ddp[0] = '\0';
+            inter_mll_path[0] = '\0';
+            inter_log_path[0] = '\0';
+            dee_output_target = output_file_buf;
         }
 
             goto encode_process; // 完成交互后跳转到编码流程
@@ -651,18 +800,22 @@ int main(int argc, char *argv[])
 encode_process:
     if (!template_xml || template_xml[0] == '\0') {
         fprintf(stderr, "错误: 未找到编码模板路径，请检查 DEE_ROOT 设置是否正确。\n");
-        system("pause");
+        if (interactive_mode) system("pause");
         return 1;
     }
 
     if (dee_exe_path[0] == '\0') {
         fprintf(stderr, "错误: 未设置 dee.exe 路径，请检查 DEE_ROOT 设置是否正确。\n");
-        system("pause");
+        if (interactive_mode) system("pause");
         return 1;
     }
 
         /* 生成临时 XML */
-    generate_xml(template_xml, temp_xml_path, input_file_buf, output_file_buf, start, end, prepend_silence, append_silence);
+    if (!dee_output_target || !*dee_output_target) {
+        dee_output_target = output_file_buf;
+    }
+
+    generate_xml(template_xml, temp_xml_path, input_file_buf, dee_output_target, start, end, prepend_silence, append_silence);
 
         /* 执行 dee */
         int cmd_len = 0;
@@ -676,7 +829,7 @@ encode_process:
         quote_argument(quoted_dee_exe, sizeof(quoted_dee_exe), dee_exe_path);
         quote_argument(quoted_temp_xml, sizeof(quoted_temp_xml), temp_xml_path);
         quote_argument(quoted_input_file, sizeof(quoted_input_file), input_file_buf);
-        quote_argument(quoted_output_file, sizeof(quoted_output_file), output_file_buf);
+        quote_argument(quoted_output_file, sizeof(quoted_output_file), dee_output_target);
         quote_argument(quoted_temp_dir, sizeof(quoted_temp_dir), temp_dir_path);
 
         cmd_len = snprintf(cmd, sizeof(cmd),
@@ -685,11 +838,11 @@ encode_process:
 #else
         cmd_len = snprintf(cmd, sizeof(cmd),
             "\"%s\" -x \"%s\" -a \"%s\" -o \"%s\" --temp \"%s\"",
-            dee_exe_path, temp_xml_path, input_file_buf, output_file_buf, temp_dir_path);
+            dee_exe_path, temp_xml_path, input_file_buf, dee_output_target, temp_dir_path);
 #endif
         if (cmd_len < 0 || cmd_len >= (int)sizeof(cmd)) {
             fprintf(stderr, "错误: 构建命令行失败或过长，请检查路径设置。\n");
-            system("pause");
+            if (interactive_mode) system("pause");
             return 1;
         }
 
@@ -777,6 +930,122 @@ encode_process:
     }
 #endif
 
-    system("pause");
+    if (exit_code != 0) {
+        if (interactive_mode) system("pause");
+        return exit_code;
+    }
+
+    if (choice == 4) {
+        printf("dee 完成 MLP 导出，开始调用 deew 生成 7.1ch DDP (Blu-ray)...\n");
+        if (!intermediate_mlp_path[0]) {
+            replace_extension(final_output_path, intermediate_mlp_path, sizeof(intermediate_mlp_path), ".mlp");
+        }
+        if (!intermediate_ddp_path[0]) {
+            replace_extension(final_output_path, intermediate_ddp_path, sizeof(intermediate_ddp_path), ".eb3");
+        }
+        if (!intermediate_ddp_alt_ec3[0]) {
+            replace_extension(final_output_path, intermediate_ddp_alt_ec3, sizeof(intermediate_ddp_alt_ec3), ".ec3");
+        }
+        if (!intermediate_ddp_alt_ddp[0]) {
+            replace_extension(final_output_path, intermediate_ddp_alt_ddp, sizeof(intermediate_ddp_alt_ddp), ".ddp");
+        }
+        char intermediate_ddp_alt_eb3[512];
+        char intermediate_ddp_alt_ddp_uc[512];
+        intermediate_ddp_alt_eb3[0] = '\0';
+        intermediate_ddp_alt_ddp_uc[0] = '\0';
+        replace_extension(final_output_path, intermediate_ddp_alt_eb3, sizeof(intermediate_ddp_alt_eb3), ".EB3");
+        replace_extension(final_output_path, intermediate_ddp_alt_ddp_uc, sizeof(intermediate_ddp_alt_ddp_uc), ".DDP");
+
+        char mlp_directory[512];
+        mlp_directory[0] = '\0';
+        if (intermediate_mlp_path[0]) {
+            copy_string(mlp_directory, sizeof(mlp_directory), intermediate_mlp_path);
+            normalize_slashes(mlp_directory);
+            char *last_sep = strrchr(mlp_directory, '\\');
+            if (!last_sep) last_sep = strrchr(mlp_directory, '/');
+            if (last_sep) {
+                if (last_sep == mlp_directory + 2 && mlp_directory[1] == ':') {
+                    *(last_sep + 1) = '\0';
+                } else {
+                    *last_sep = '\0';
+                }
+            } else {
+                copy_string(mlp_directory, sizeof(mlp_directory), ".");
+            }
+        } else {
+            copy_string(mlp_directory, sizeof(mlp_directory), ".");
+        }
+
+        char deew_cmd[4096];
+        int deew_len = snprintf(deew_cmd, sizeof(deew_cmd),
+            "cmd /C \"chcp 65001 > nul && cd /d \"%s\" && (python -X utf8 -m deew -i \"%s\" -f ddp -b 1536 -fb || py -3 -X utf8 -m deew -i \"%s\" -f ddp -b 1536 -fb || py -3.9 -X utf8 -m deew -i \"%s\" -f ddp -b 1536 -fb)\"",
+            mlp_directory, intermediate_mlp_path, intermediate_mlp_path, intermediate_mlp_path);
+        if (deew_len < 0 || deew_len >= (int)sizeof(deew_cmd)) {
+            fprintf(stderr, "错误: 构建 deew 命令失败。\n");
+            if (interactive_mode) system("pause");
+            return 1;
+        }
+
+        printf("执行命令: %s\n", deew_cmd);
+        fflush(stdout);
+        int deew_code = system(deew_cmd);
+        if (deew_code != 0) {
+            fprintf(stderr, "deew 执行失败 (exit=%d)，请确认已通过 pip 安装 deew 并可在 PATH 中访问。当前命令: %s\n", deew_code, deew_cmd);
+            if (interactive_mode) system("pause");
+            return 1;
+        }
+
+        const char *ddp_source_path = NULL;
+        if (file_exists(intermediate_ddp_path)) {
+            ddp_source_path = intermediate_ddp_path;
+        } else if (file_exists(intermediate_ddp_alt_eb3)) {
+            ddp_source_path = intermediate_ddp_alt_eb3;
+        } else if (file_exists(intermediate_ddp_alt_ec3)) {
+            ddp_source_path = intermediate_ddp_alt_ec3;
+        } else if (file_exists(intermediate_ddp_alt_ddp)) {
+            ddp_source_path = intermediate_ddp_alt_ddp;
+        } else if (file_exists(intermediate_ddp_alt_ddp_uc)) {
+            ddp_source_path = intermediate_ddp_alt_ddp_uc;
+        }
+
+        if (!ddp_source_path) {
+            fprintf(stderr, "deew 未生成预期的 DDP 文件，请检查命令输出，并确认 deew 默认输出位於與輸入相同的目录。\n");
+            if (interactive_mode) system("pause");
+            return 1;
+        }
+
+        printf("找到 DDP 中间文件: %s\n", ddp_source_path);
+        ensure_parent_directory(final_output_path);
+
+        char ffmpeg_cmd[4096];
+        int ffmpeg_len = snprintf(ffmpeg_cmd, sizeof(ffmpeg_cmd),
+            "ffmpeg -y -i \"%s\" -c:a copy -movflags +faststart -f mp4 \"%s\"",
+            ddp_source_path, final_output_path);
+        if (ffmpeg_len < 0 || ffmpeg_len >= (int)sizeof(ffmpeg_cmd)) {
+            fprintf(stderr, "错误: 构建 ffmpeg 命令失败。\n");
+            if (interactive_mode) system("pause");
+            return 1;
+        }
+
+        printf("执行命令: %s\n", ffmpeg_cmd);
+        fflush(stdout);
+        int ffmpeg_code = system(ffmpeg_cmd);
+        if (ffmpeg_code != 0 || !file_exists(final_output_path)) {
+            fprintf(stderr, "ffmpeg 转封装失败 (exit=%d)，请检查 ffmpeg 是否在 PATH 中。\n", ffmpeg_code);
+            if (interactive_mode) system("pause");
+            return 1;
+        }
+
+        printf("已生成最终输出文件: %s\n", final_output_path);
+
+        remove_file_if_exists(intermediate_mlp_path);
+        remove_file_if_exists(intermediate_ddp_path);
+        remove_file_if_exists(intermediate_ddp_alt_ec3);
+        remove_file_if_exists(intermediate_ddp_alt_ddp);
+        remove_file_if_exists(inter_mll_path);
+        remove_file_if_exists(inter_log_path);
+    }
+ 
+    if (interactive_mode) system("pause");
     return exit_code;
 }

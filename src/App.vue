@@ -22,6 +22,8 @@
           <el-radio-group v-model="form.choice">
             <el-radio :value="1">{{ t('optionEC3') }}</el-radio>
             <el-radio :value="2">{{ t('optionM4A') }}</el-radio>
+            <el-radio :value="3">{{ t('optionTrueHD') }}</el-radio>
+            <el-radio :value="4">{{ t('optionDDPBluRay') }}</el-radio>
           </el-radio-group>
         </el-form-item>
 
@@ -105,6 +107,8 @@ const messages = {
     encodeType: '编码类型',
     optionEC3: 'Dolby Atmos EC3',
     optionM4A: 'Dolby Atmos M4A',
+    optionTrueHD: 'Dolby Atmos TrueHD（MLP）',
+    optionDDPBluRay: 'Dolby Digital Plus 7.1（Blu-ray）',
     startTime: '起始时间',
     endTime: '结束时间',
     prependSilence: '开头静音时长',
@@ -128,6 +132,7 @@ const messages = {
     cancelRequested: '已请求取消编码...',
     cancelEncodingFailed: '取消编码失败: ',
     encodingInProgress: '编码任务正在进行中。',
+    postProcessMessage: '正在转换为 7.1 声道 Dolby Digital Plus，请稍候...',
     loadingLast: '正在加载上次参数...',
     loadedLastOk: '成功加载上次参数。',
     loadedLastNone: '未找到有效的上次操作记录。',
@@ -157,6 +162,8 @@ const messages = {
     encodeType: 'Encoding Type',
     optionEC3: 'Dolby Atmos EC3',
     optionM4A: 'Dolby Atmos M4A',
+    optionTrueHD: 'Dolby Atmos TrueHD (MLP)',
+    optionDDPBluRay: 'Dolby Digital Plus 7.1 (Blu-ray)',
     startTime: 'Start Time',
     endTime: 'End Time',
     prependSilence: 'Leading Silence',
@@ -180,6 +187,7 @@ const messages = {
     cancelRequested: 'Cancellation requested...',
     cancelEncodingFailed: 'Failed to cancel encoding: ',
     encodingInProgress: 'Encoding already in progress.',
+    postProcessMessage: 'Converting via DeeW/ffmpeg… please wait.',
     loadingLast: 'Loading last parameters...',
     loadedLastOk: 'Successfully loaded last parameters.',
     loadedLastNone: 'No valid previous operation found.',
@@ -254,6 +262,7 @@ const showProgress = ref(false)
 const isEncoding = ref(false)
 const settingsDialogVisible = ref(false)
 const deeRootInput = ref('')
+const postProcessing = ref(false)
 
 const clearLog = () => {
   if (!logOutput.value) return
@@ -264,7 +273,11 @@ const clearLog = () => {
 const currentSettings = ref({ deeRoot: '', language: lang.value })
 
 const defaultOutputFile = computed(() => {
-  return form.choice === 1 ? 'D:\\atmos.ec3' : 'D:\\atmos.m4a'
+  if (form.choice === 1) return 'D:\\atmos.ec3'
+  if (form.choice === 2) return 'D:\\atmos.m4a'
+  if (form.choice === 3) return 'D:\\atmos.mlp'
+  if (form.choice === 4) return 'D:\\atmos_bluray.m4a'
+  return 'D:\\atmos.ec3'
 })
 
 let progressHideTimer = null
@@ -273,6 +286,27 @@ const scheduleHideProgress = () => {
   progressHideTimer = setTimeout(() => {
     showProgress.value = false
   }, 2000)
+}
+
+const cancelHideProgress = () => {
+  if (progressHideTimer) {
+    clearTimeout(progressHideTimer)
+    progressHideTimer = null
+  }
+}
+
+const enterPostProcessing = () => {
+  if (postProcessing.value) return
+  postProcessing.value = true
+  cancelHideProgress()
+  showProgress.value = true
+  progress.value = 99
+  ElMessage.info(t('postProcessMessage'))
+}
+
+const exitPostProcessing = () => {
+  if (!postProcessing.value) return
+  postProcessing.value = false
 }
 
 // 监听 C 程序输出
@@ -289,20 +323,33 @@ onMounted(() => {
       if (typeof data === 'string') {
         const match = data.match(/Overall progress:\s*([0-9]+(?:\.[0-9]+)?)/gi)
         if (match) {
-          progress.value = Math.min(100, Number.isFinite(match[0].split(':')[1].trim()) ? Number(match[0].split(':')[1].trim()) : 0)
-          showProgress.value = true
-          if (progress.value >= 100) {
-            scheduleHideProgress()
+          const value = Number(match[0].split(':')[1].trim())
+          if (form.choice === 4 && !postProcessing.value && value >= 99) {
+            enterPostProcessing()
+          } else if (!postProcessing.value) {
+            progress.value = Math.min(100, Number.isFinite(value) ? value : 0)
+            showProgress.value = true
+            if (progress.value >= 100) {
+              scheduleHideProgress()
+            }
           }
         }
         const matchMissing = data.match(/Storage:\s*File\s+"(.+?)"\s+does\s+not\s+exist/i)
         if (matchMissing) {
           lastErrorIsMissingFile.value = true
         }
+        const trimmed = data.trim()
+        if (trimmed.includes('dee 完成 MLP 导出')) {
+          enterPostProcessing()
+        }
+        if (trimmed.includes('已生成最终输出文件') || trimmed.includes('ffmpeg 转封装失败')) {
+          exitPostProcessing()
+        }
       }
     })
     ipcRenderer.on('encoding-complete', (event, code) => {
       isEncoding.value = false
+      exitPostProcessing()
       ElMessage.success(`编码完成，退出码: ${code}`)
       logOutput.value += `编码完成，退出码: ${code}\n`
       lastErrorIsMissingFile.value = false
@@ -312,6 +359,7 @@ onMounted(() => {
     })
     ipcRenderer.on('encoding-error', (event, error) => {
       isEncoding.value = false
+      exitPostProcessing()
       ElMessage.error(`${t('encodingError')}${error}`)
       logOutput.value += `编码错误: ${error}\n`
       if (lastErrorIsMissingFile.value || /Storage:\s*File\s+"(.+?)"\s+does\s+not\s+exist/i.test(error)) {
@@ -321,7 +369,18 @@ onMounted(() => {
       scheduleHideProgress()
     })
     ipcRenderer.on('encoding-progress', (event, value) => {
-      progress.value = Math.min(100, Number.isFinite(value) ? value : 0)
+      if (postProcessing.value) {
+        progress.value = 99
+        showProgress.value = true
+        return
+      }
+      const numericValue = Number.isFinite(value) ? value : 0
+      if (form.choice === 4 && numericValue >= 99) {
+        progress.value = 99
+        showProgress.value = true
+        return
+      }
+      progress.value = Math.min(100, numericValue)
       showProgress.value = true
       if (progress.value >= 100) {
         scheduleHideProgress()
@@ -329,6 +388,7 @@ onMounted(() => {
     })
     ipcRenderer.on('encoding-cancelled', () => {
       isEncoding.value = false
+      exitPostProcessing()
       ElMessage.info(t('encodingCancelled'))
       logOutput.value += `${t('encodingCancelled')}\n`
       scheduleHideProgress()
@@ -393,10 +453,29 @@ const selectOutputFile = async () => {
   const defaultPath = form.outputFile || defaultOutputFile.value
   const result = await ipcRenderer.invoke('save-file-dialog', {
     defaultPath: defaultPath,
-    filters: [
-      { name: 'Dolby Atmos EC3', extensions: ['ec3'] },
-      { name: 'Dolby Atmos M4A', extensions: ['m4a'] },
-    ]
+    filters: (() => {
+      const filterTemplates = [
+        { choice: 1, label: t('optionEC3'), extension: 'ec3' },
+        { choice: 2, label: t('optionM4A'), extension: 'm4a' },
+        { choice: 3, label: t('optionTrueHD'), extension: 'mlp' },
+        { choice: 4, label: t('optionDDPBluRay'), extension: 'm4a' },
+      ]
+      const selectedExtension = form.choice === 1
+        ? 'ec3'
+        : form.choice === 2
+          ? 'm4a'
+          : form.choice === 3
+            ? 'mlp'
+            : 'm4a'
+      return filterTemplates
+        .slice()
+        .sort((a, b) => {
+          if (a.extension === selectedExtension) return -1
+          if (b.extension === selectedExtension) return 1
+          return 0
+        })
+        .map((item) => ({ name: item.label, extensions: [item.extension] }))
+    })()
   })
   if (result && !result.canceled && result.filePath) {
     form.outputFile = result.filePath
@@ -474,6 +553,7 @@ const startEncoding = async () => {
 
   logOutput.value = '' // 清空日志
   const currentOutputFile = form.outputFile || defaultOutputFile.value;
+  exitPostProcessing()
 
   if (hasIllegalPathChars(form.inputFile) || hasIllegalPathChars(currentOutputFile)) {
     ElMessage.error(t('pathIllegalChars'))

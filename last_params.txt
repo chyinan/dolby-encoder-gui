@@ -1,9 +1,9 @@
-choice=2
+choice=4
 start=
 end=
 prepend_silence=
 append_silence=
-template_xml=D:\Dolby_Encoding_Engine\xml_templates\encode_to_atmos_ddp\atmos_mezz_encode_to_atmos_ddp_mp4.xml
-output_file=D:\atmos.m4a
-input_file=D:\A  DM.wav
+template_xml=D:\Dolby_Encoding_Engine\xml_templates\encode_to_dthd\atmos_mezz_encode_to_dthd_mlp.xml
+output_file=D:\atmos_bluray.m4a
+input_file=D:\Violet Snow.wav
 valid=1

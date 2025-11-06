@@ -2,12 +2,12 @@
 
 ## Overview
 
-Dolby Encoding Engine GUI is a lightweight Electron + Vue 3 desktop helper that wraps the existing bridge command line (`encode.exe`). This helper executable simply forwards parameters to the official Dolby `dee.exe` suite. The GUI provides a friendly interface for selecting input/output files, switching between Atmos EC3 and Atmos M4A encoding profiles, monitoring real-time logs, and displaying progress as reported by the encoder.
+Dolby Encoding Engine GUI is a lightweight Electron + Vue 3 desktop helper that wraps the existing bridge command line (`encode.exe`). This helper executable simply forwards parameters to the official Dolby `dee.exe` suite. The GUI provides a friendly interface for selecting input/output files, switching between Atmos EC3, Atmos M4A, or Atmos TrueHD (MLP) encoding profiles, monitoring real-time logs, and displaying progress as reported by the encoder.
 
 ## Key Features
 
 - **Minimal desktop client** built with Electron, Vue 3, and Element Plus.
-- **Two encoding profiles** (Atmos EC3 / M4A) exposed through radio buttons.
+- **Four encoding workflows** (Atmos EC3 / Atmos M4A / Atmos TrueHD MLP / 7.1ch DDP Blu-ray pipeline) exposed through radio buttons.
 - **Real-time log viewer** streaming stdout/stderr from `encode.exe`.
 - **Progress bar** that parses `Overall progress: <value>` from encoder logs.
 - **Parameter persistence** through `last_params.txt` stored in the project root.
@@ -24,6 +24,8 @@ Dolby Encoding Engine GUI is a lightweight Electron + Vue 3 desktop helper that 
 - **Node.js** 16 or newer (recommended) with npm.
 - **A Windows-compatible C toolchain** if you need to rebuild the helper bridge `encode.exe` from `encode.c` (MSVC or MinGW-w64).
 - **Dolby Encoding Engine**. This software is only compatible with `Dolby Encoding Engine v2.3`.
+- **deew** (Dolby Encoding Engine Wrapper). Install via `pip install deew` so the Blu-ray workflow can post-process the MLP file.
+- **ffmpeg**. Install an ffmpeg build and ensure `ffmpeg` is available on the PATH (used to remux the final `.m4a`).
 
 ## Project Structure
 
@@ -75,9 +77,9 @@ gcc -O2 -Wall -o encode.exe encode.c
 
 1. Launch the app (`npm run electron:serve` or a packaged build).
 2. Pick the ADM WAV input file and set an output path.
-3. Choose the encoding profile (Atmos EC3 or Atmos M4A).
+3. Choose the encoding profile/workflow (Atmos EC3, Atmos M4A, Atmos TrueHD MLP, or 7.1ch DDP Blu-ray).
 4. Optionally enter start/end times and leading/trailing silence durations.
-5. Click **Start Encoding** to invoke the helper `encode.exe`, which in turn calls the official `dee.exe` tools with the provided parameters.
+5. Click **Start Encoding** to invoke the helper `encode.exe`, which in turn calls the official `dee.exe` tools with the provided parameters. For the Blu-ray profile, the helper will additionally call `deew` and `ffmpeg` after `dee` finishes.
 6. Observe progress and logs:
    - Logs display in real time.
    - Progress bar updates whenever the log contains `Overall progress: <value>`.
@@ -87,7 +89,7 @@ gcc -O2 -Wall -o encode.exe encode.c
 
 ## Notes & Troubleshooting
 
-- Ensure the helper `encode.exe` and the official `dee.exe` binaries have access to the Dolby XML templates referenced inside `encode.c`.
+- Ensure the helper `encode.exe` and the official `dee.exe` binaries have access to the Dolby XML templates referenced inside `encode.c` (EC3 / MP4 under `xml_templates\encode_to_atmos_ddp` and TrueHD MLP under `xml_templates\encode_to_dthd`).
 - The Dolby engine path defaults to `D:\Dolby_Encoding_Engine`. Update it via **Settings** if your assets live elsewhere. The same path is also accepted from the `DEE_ROOT` environment variable.
 - `last_params.txt` is read/written in the project root. Delete it to reset persisted values.
 - If progress stays at 0%, verify that the encoder logs still include `Overall progress:` lines.
@@ -104,7 +106,7 @@ Dolby Encoding Engine GUI 是一个基于 Electron + Vue 3 的桌面工具，用
 ## 功能亮点
 
 - **轻量桌面客户端**：Electron、Vue 3、Element Plus 构建。
-- **两种编码类型**：Dolby Atmos EC3 / M4A 单选切换。
+- **四种编码流程**：Dolby Atmos EC3 / M4A / TrueHD MLP / 7.1ch DDP（Blu-ray 管线）。
 - **实时日志输出**：展示 `encode.exe` 的标准输出和错误输出。
 - **进度条联动**：从日志中的 `Overall progress: <数值>` 自动解析进度。
 - **参数持久化**：通过项目根目录下的 `last_params.txt` 记录上次操作。
@@ -120,6 +122,8 @@ Dolby Encoding Engine GUI 是一个基于 Electron + Vue 3 的桌面工具，用
 - 安装 **Node.js 16+** 及 npm。
 - 如需修改代码，需安装 **Windows C 编译环境**（MSVC 或 MinGW-w64）以便修改后重新编译 `encode.exe`。
 - **Dolby Encoding Engine** 本软件仅适配Dolby Encoding Engine v2.3。
+- **deew**（Dolby Encoding Engine Wrapper）。通过 `pip install deew` 安装，用于在 Blu-ray 流程中处理 MLP -> DDP。
+- **ffmpeg**。安装并确保 `ffmpeg` 位于 PATH 中，用于最终的 `.m4a` 转封装。
 
 ## 项目结构
 
@@ -171,9 +175,9 @@ gcc -O2 -Wall -o encode.exe encode.c
 
 1. 启动应用（开发模式或打包版本）。
 2. 选择 ADM WAV 输入文件和输出保存路径。
-3. 切换需要的编码类型（Atmos EC3 或 Atmos M4A）。
+3. 切换需要的编码工作流（Atmos EC3、Atmos M4A、Atmos TrueHD MLP 或 7.1ch DDP Blu-ray）。
 4. 如需可填写起始/结束时间和首尾静音时长。
-5. 点击 **开始编码**，程序会携带参数调用辅助程序 `encode.exe`，随后由它转发至官方 `dee.exe` 执行编码。
+5. 点击 **开始编码**，程序会携带参数调用辅助程序 `encode.exe`。对于 Blu-ray 工作流，`dee` 完成 MLP 导出后会追加调用 `deew` 与 `ffmpeg`。
 6. 日志与进度：
    - 日志实时显示。
    - 当日志出现 `Overall progress:` 时，进度条会同步更新。
@@ -182,7 +186,8 @@ gcc -O2 -Wall -o encode.exe encode.c
 
 ## 注意事项
 
-- 请确保辅助程序 `encode.exe` 以及官方 `dee.exe` 能访问到 `encode.c` 中引用的 Dolby XML 模板路径。
+- 请确保辅助程序 `encode.exe` 以及官方 `dee.exe` 能访问到 `encode.c` 中引用的 Dolby XML 模板路径（`xml_templates\encode_to_atmos_ddp` 下的 EC3/M4A 模板以及 `xml_templates\encode_to_dthd` 下的 TrueHD MLP 模板）。
+- Blu-ray 工作流还需要 `deew`（Python 包）以及 `ffmpeg` 可在 PATH 中调用。
 - `last_params.txt` 存放在项目根目录，可删除以清空历史记录。
 - 如果进度条始终为 0%，请确认编码日志仍包含 `Overall progress:` 字样。
 - 应用默认语言为英文，可通过菜单或快捷键切换至中文。
