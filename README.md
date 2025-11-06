@@ -24,6 +24,7 @@ Dolby Encoding Engine GUI is a lightweight Electron + Vue 3 desktop helper that 
 - **Node.js** 16 or newer (recommended) with npm.
 - **A Windows-compatible C toolchain** if you need to rebuild the helper bridge `encode.exe` from `encode.c` (MSVC or MinGW-w64).
 - **Dolby Encoding Engine**. This software is only compatible with `Dolby Encoding Engine v2.3`.
+- **Python** 3.9+ runtime (ensure `python` / `py` commands are available on PATH). The CLI uses the system interpreter to launch `deew`.
 - **deew** (Dolby Encoding Engine Wrapper). Install via `pip install deew` so the Blu-ray workflow can post-process the MLP file.
 - **ffmpeg**. Install an ffmpeg build and ensure `ffmpeg` is available on the PATH (used to remux the final `.m4a`).
 
@@ -94,6 +95,7 @@ gcc -O2 -Wall -o encode.exe encode.c
 - `last_params.txt` is read/written in the project root. Delete it to reset persisted values.
 - If progress stays at 0%, verify that the encoder logs still include `Overall progress:` lines.
 - The UI defaults to English. Use the `Language` menu or shortcuts to switch to 中文.
+- Dolby Digital Plus for Blu-ray workflow builds upon the open-source [deew](https://github.com/pcroland/deew) project — many thanks to its contributors.
 
 ---
 
@@ -122,6 +124,7 @@ Dolby Encoding Engine GUI 是一个基于 Electron + Vue 3 的桌面工具，用
 - 安装 **Node.js 16+** 及 npm。
 - 如需修改代码，需安装 **Windows C 编译环境**（MSVC 或 MinGW-w64）以便修改后重新编译 `encode.exe`。
 - **Dolby Encoding Engine** 本软件仅适配Dolby Encoding Engine v2.3。
+- **Python 3.9+** 运行时环境（需要可用的 `python`/`py` 命令以便 CLI 调用 deew）。
 - **deew**（Dolby Encoding Engine Wrapper）。通过 `pip install deew` 安装，用于在 Blu-ray 流程中处理 MLP -> DDP。
 - **ffmpeg**。安装并确保 `ffmpeg` 位于 PATH 中，用于最终的 `.m4a` 转封装。
 
@@ -187,7 +190,7 @@ gcc -O2 -Wall -o encode.exe encode.c
 ## 注意事项
 
 - 请确保辅助程序 `encode.exe` 以及官方 `dee.exe` 能访问到 `encode.c` 中引用的 Dolby XML 模板路径（`xml_templates\encode_to_atmos_ddp` 下的 EC3/M4A 模板以及 `xml_templates\encode_to_dthd` 下的 TrueHD MLP 模板）。
-- Blu-ray 工作流还需要 `deew`（Python 包）以及 `ffmpeg` 可在 PATH 中调用。
+- Dolby Digital Plus for Blu-ray 工作流基于开源项目 [deew](https://github.com/pcroland/deew) 实现，感谢其作者和维护者。
 - `last_params.txt` 存放在项目根目录，可删除以清空历史记录。
 - 如果进度条始终为 0%，请确认编码日志仍包含 `Overall progress:` 字样。
 - 应用默认语言为英文，可通过菜单或快捷键切换至中文。
