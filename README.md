@@ -42,10 +42,10 @@ Dolby Encoding Engine GUI is a lightweight Electron + Vue 3 desktop helper that 
    ```bash
    npm install
    ```
-2. Place the helper `encode.exe`, `encode.c` (optional for rebuilding), the official Dolby `dee.exe` binaries, and any required Dolby assets in the repository root (`dolby-encoder-gui/`).
-3. (Optional) Define `ENCODE_PATH` if `encode.exe` lives elsewhere:
+2. Ensure the official Dolby Encoding Engine (`dee.exe` and its `xml_templates/` etc.) is available on disk. You can point the GUI to its root directory from the **Settings → Engine Directory** dialog.
+3. (Optional) If you prefer to keep `encode.exe` elsewhere or rebuild it yourself, adjust `ENCODE_PATH` before launching:
    ```cmd
-   set ENCODE_PATH=C:\path\to\encode.exe # Path for reference only; use your actual location
+   set ENCODE_PATH=C:\path\to\encode.exe
    ```
 4. Start the Electron development server:
    ```bash
@@ -90,11 +90,11 @@ gcc -O2 -Wall -o encode.exe encode.c
 
 ## Notes & Troubleshooting
 
-- Ensure the helper `encode.exe` and the official `dee.exe` binaries have access to the Dolby XML templates referenced inside `encode.c` (EC3 / MP4 under `xml_templates\encode_to_atmos_ddp` and TrueHD MLP under `xml_templates\encode_to_dthd`).
+- Ensure that the program can access the Dolby Encoding Engine root directory.
 - The Dolby engine path defaults to `D:\Dolby_Encoding_Engine`. Update it via **Settings** if your assets live elsewhere. The same path is also accepted from the `DEE_ROOT` environment variable.
 - `last_params.txt` is read/written in the project root. Delete it to reset persisted values.
 - If progress stays at 0%, verify that the encoder logs still include `Overall progress:` lines.
-- The UI defaults to English. Use the `Language` menu or shortcuts to switch to 中文.
+- The UI defaults to English. Use the `Language` menu or shortcuts to switch to Chinese.
 - Dolby Digital Plus for Blu-ray workflow builds upon the open-source [deew](https://github.com/pcroland/deew) project — many thanks to its contributors.
 
 ---
@@ -142,10 +142,10 @@ Dolby Encoding Engine GUI 是一个基于 Electron + Vue 3 的桌面工具，用
    ```bash
    npm install
    ```
-2. 将辅助程序 `encode.exe`、`encode.c`（可选，用于重新编译）、官方 Dolby `dee.exe` 以及所需资源放在仓库根目录 `dolby-encoder-gui\`。
-3. （可选）若 `encode.exe` 位于其他目录，设置环境变量：
+2. 确保官方 Dolby Encoding Engine（`dee.exe` 及其 `xml_templates/` 等资源）在本机可用，可在应用的 **设置 → dee 目录** 中指定其根目录。
+3. （可选）如需将 `encode.exe` 放在其他位置或自行重新编译，可在启动前设置环境变量：
    ```cmd
-   set ENCODE_PATH=C:\路径\encode.exe # 路径仅供参考，请以实际为准
+   set ENCODE_PATH=C:\路径\encode.exe
    ```
 4. 启动开发模式：
    ```bash
@@ -189,7 +189,7 @@ gcc -O2 -Wall -o encode.exe encode.c
 
 ## 注意事项
 
-- 请确保辅助程序 `encode.exe` 以及官方 `dee.exe` 能访问到 `encode.c` 中引用的 Dolby XML 模板路径（`xml_templates\encode_to_atmos_ddp` 下的 EC3/M4A 模板以及 `xml_templates\encode_to_dthd` 下的 TrueHD MLP 模板）。
+- 请确保程序能访问到Dolby Encoding Engine根目录。
 - Dolby Digital Plus for Blu-ray 工作流基于开源项目 [deew](https://github.com/pcroland/deew) 实现，感谢其作者和维护者。
 - `last_params.txt` 存放在项目根目录，可删除以清空历史记录。
 - 如果进度条始终为 0%，请确认编码日志仍包含 `Overall progress:` 字样。
