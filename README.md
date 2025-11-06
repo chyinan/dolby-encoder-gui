@@ -87,7 +87,7 @@ During the Blu-ray profile, the UI holds at 99% with a "converting" toast while 
 ## 🧪 Troubleshooting
 
 - Progress stuck at 0% ➜ check `dee.exe` logs still emit `Overall progress:` lines.
-- `deew` cannot find the input ➜ ensure Python 3.9+ is first on PATH and the app switches to the MLP directory automatically.
+- `deew` cannot find the input ➜ ensure Python 3.9+ is first on PATH.
 - `ffmpeg` header error ➜ confirm you’re using a build that supports `-c:a copy` with E-AC-3 inside MP4 (`ffmpeg` 5.x/6.x works).
 - Need a fresh start ➜ delete `last_params.txt` in the project root.
 
@@ -153,8 +153,8 @@ Blu-ray 流程中，进度条会在 99% 停留并提示“正在转换…”，�
 ## 🧪 常见问题
 
 - 进度条停在 0% ➜ 确认 `dee.exe` 日志仍输出 `Overall progress:`。
-- `deew` 找不到输入文件 ➜ 确认 Python 3.9+ 在 PATH 且应用会切换至 MLP 输出目录。
-- `ffmpeg` 报头部错误 ➜ 使用支持 E-AC-3 copy 的 `ffmpeg` 版本，并保持 Blu-ray 模式产生的 `.eb3` 在同一目录。
+- `deew` 找不到输入文件 ➜ 确认 Python 3.9+ 在PATH环境变量中。
+- `ffmpeg` 报头部错误 ➜ 使用支持 E-AC-3 copy 的 `ffmpeg` 版本并确保在PATH环境变量中。
 - 重置参数 ➜ 删除项目根目录下的 `last_params.txt`。
 
 ## 🤝 鸣谢
