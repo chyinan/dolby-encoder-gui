@@ -45,7 +45,7 @@ A tidy Electron + Vue 3 desktop companion that wraps `encode.exe`, orchestrates 
 
 ---
 
-## 🚀 Quick Start (English)
+## 🚀 Quick Start
 
 ```bash
 # 1. Install UI dependencies
@@ -68,6 +68,10 @@ npm run electron:build
 5. Provide ADM WAV input + output name, pick the workflow, hit **Start Encoding**.
 
 During the Blu-ray profile, the UI holds at 99% with a "converting" toast while `deew` and `ffmpeg` finish. When everything succeeds you’ll see `Encoding finished, exit code: 0` and the progress bar snaps to 100%.
+
+## 📸 Screenshots
+
+ ![Main workflow UI](./screenshot_EN.png)
 
 ---
 
@@ -97,7 +101,7 @@ During the Blu-ray profile, the UI holds at 99% with a "converting" toast while 
 
 ---
 
-# Dolby Encoding Engine GUI · 中文说明
+# Dolby Encoding Engine GUI
 
 ## ✨ 功能亮点
 
@@ -134,6 +138,10 @@ npm run electron:build
 5. 选择 ADM WAV 输入、输出文件名，挑选所需编码流程并开始。
 
 Blu-ray 流程中，进度条会在 99% 停留并提示“正在转换…”，待 `deew` 与 `ffmpeg` 完成后才显示 100%。
+
+## 📸 截图
+
+![主界面](./screenshot_CN.png)
 
 ## ⚙️ 配置说明
 
