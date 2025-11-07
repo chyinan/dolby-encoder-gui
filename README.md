@@ -6,7 +6,8 @@
 [![python](https://img.shields.io/badge/python-3.9+-3776AB.svg)](https://www.python.org/)
 [![license](https://img.shields.io/badge/license-MIT-ff69b4.svg)](./LICENSE)
 
-A tidy Electron + Vue 3 desktop companion that wraps `encode.exe`, orchestrates Dolby `dee.exe`, and now extends the workflow with **deew** and **ffmpeg** to deliver 7.1ch Dolby Digital Plus (Blu-ray) assets from ADM BWF inputs.
+A cross-platform, open-source graphical interface for Dolby Encoding Engine (DEE) workflows.
+Designed for creators who need an easier way to render ADM BWF projects into TrueHD, DD+, or EAC3-JOC deliverables — without touching the command line.
 
 ---
 
@@ -93,6 +94,14 @@ During the Blu-ray profile, the UI holds at 99% with a "converting" toast while 
 
 ---
 
+## ⚖️ Legal Notice
+
+- This project is not affiliated with or endorsed by Dolby Laboratories.
+- “Dolby”, “Dolby Atmos”, “Dolby TrueHD”, and “Dolby Digital Plus (DD+)” are registered trademarks of Dolby Laboratories Licensing Corporation.
+- This software does not contain or redistribute any proprietary Dolby components — it only provides a graphical user interface for users who already have access to official Dolby command-line tools.
+
+---
+
 ## 🤝 Credits
 
 - Dolby Encoding Engine (commercial software) for the core transcodes.
@@ -102,6 +111,9 @@ During the Blu-ray profile, the UI holds at 99% with a "converting" toast while 
 ---
 
 # Dolby Encoding Engine GUI
+
+用于杜比编码引擎 （DEE） 工作流程的开源GUI。
+专为需要更简单的方式将 ADM BWF 项目渲染为 TrueHD、DD+ 或 EAC3-JOC 可交付成果的创作者而设计，而无需接触命令行。
 
 ## ✨ 功能亮点
 
@@ -156,6 +168,12 @@ Blu-ray 流程中，进度条会在 99% 停留并提示“正在转换…”，�
 - `deew` 找不到输入文件 ➜ 确认 Python 3.9+ 在PATH环境变量中。
 - `ffmpeg` 报头部错误 ➜ 使用支持 E-AC-3 copy 的 `ffmpeg` 版本并确保在PATH环境变量中。
 - 重置参数 ➜ 删除项目根目录下的 `last_params.txt`。
+
+## ⚖️ 法律声明
+
+- 该项目不隶属于杜比实验室，也不受杜比实验室认可。
+- “杜比”、“杜比全景声”、“杜比 TrueHD”和“杜比数字增强 （DD+）”是杜比实验室许可公司的注册商标。
+- 该软件不包含或重新分发任何专有的杜比组件——它仅为已经有权访问官方杜比命令行工具的用户提供图形用户界面。
 
 ## 🤝 鸣谢
 
