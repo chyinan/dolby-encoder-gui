@@ -1,4 +1,4 @@
-# Dolby Encoding Engine GUI
+# Dolby Encoder GUI
 
 [![release](https://img.shields.io/badge/release-v1.0-blue.svg)](./dist_electron)
 [![electron](https://img.shields.io/badge/electron-13.0-47848F.svg)](https://www.electronjs.org/)
@@ -110,7 +110,7 @@ During the Blu-ray profile, the UI holds at 99% with a "converting" toast while 
 
 ---
 
-# Dolby Encoding Engine GUI
+# Dolby Encoder GUI
 
 用于杜比编码引擎 （DEE） 工作流程的开源GUI。
 专为需要更简单的方式将 ADM BWF 项目渲染为 TrueHD、DD+ 或 EAC3-JOC 可交付成果的创作者而设计，而无需接触命令行。
