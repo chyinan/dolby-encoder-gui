@@ -978,8 +978,13 @@ encode_process:
 
         char deew_cmd[4096];
         int deew_len = snprintf(deew_cmd, sizeof(deew_cmd),
-            "cmd /C \"chcp 65001 > nul && cd /d \"%s\" && (python -X utf8 -m deew -i \"%s\" -f ddp -b 1536 -fb || py -3 -X utf8 -m deew -i \"%s\" -f ddp -b 1536 -fb || py -3.9 -X utf8 -m deew -i \"%s\" -f ddp -b 1536 -fb)\"",
-            mlp_directory, intermediate_mlp_path, intermediate_mlp_path, intermediate_mlp_path);
+            "cmd /C \"chcp 65001 > nul && cd /d \"%s\" && (deew.exe -i \"%s\" -f ddp -b 1536 -fb || deew -i \"%s\" -f ddp -b 1536 -fb || python -X utf8 -m deew -i \"%s\" -f ddp -b 1536 -fb || py -3 -X utf8 -m deew -i \"%s\" -f ddp -b 1536 -fb || py -3.9 -X utf8 -m deew -i \"%s\" -f ddp -b 1536 -fb)\"",
+            mlp_directory,
+            intermediate_mlp_path,
+            intermediate_mlp_path,
+            intermediate_mlp_path,
+            intermediate_mlp_path,
+            intermediate_mlp_path);
         if (deew_len < 0 || deew_len >= (int)sizeof(deew_cmd)) {
             fprintf(stderr, "错误: 构建 deew 命令失败。\n");
             if (interactive_mode) system("pause");
@@ -990,7 +995,7 @@ encode_process:
         fflush(stdout);
         int deew_code = system(deew_cmd);
         if (deew_code != 0) {
-            fprintf(stderr, "deew 执行失败 (exit=%d)，请确认已通过 pip 安装 deew 并可在 PATH 中访问。当前命令: %s\n", deew_code, deew_cmd);
+            fprintf(stderr, "deew 执行失败 (exit=%d)，请确认已将 deew.exe 加入 PATH 或已通过 pip 安装 deew。当前命令: %s\n", deew_code, deew_cmd);
             if (interactive_mode) system("pause");
             return 1;
         }

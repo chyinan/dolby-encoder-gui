@@ -369,18 +369,20 @@ watch([() => form.inputFile, () => form.choice], () => {
   synchronizeAutoOutput()
 }, { immediate: true })
 
-const buildSafeOutputPath = (finalPath, choice) => {
+const buildSafeOutputPath = (finalPath) => {
   if (!finalPath) return null
-  const extension = getOutputExtensionByChoice(choice)
   const lastBackslash = finalPath.lastIndexOf('\\')
   const lastSlash = finalPath.lastIndexOf('/')
   const separatorIndex = Math.max(lastBackslash, lastSlash)
   const directory = separatorIndex >= 0 ? finalPath.slice(0, separatorIndex) : ''
+  const dotIndex = finalPath.lastIndexOf('.')
+  const hasExtension = dotIndex > separatorIndex
+  const extension = hasExtension ? finalPath.slice(dotIndex) : `.${getOutputExtensionByChoice(form.choice)}`
   const needsSeparator = directory && !directory.endsWith('\\') && !directory.endsWith('/')
   const separator = needsSeparator ? '\\' : ''
   const dirPart = directory ? `${directory}${separator}` : ''
   const uniqueSuffix = Date.now().toString(36)
-  return `${dirPart}dolby_auto_output_${uniqueSuffix}.${extension}`
+  return `${dirPart}dolby_auto_output_${uniqueSuffix}${extension}`
 }
 
 let progressHideTimer = null
@@ -669,9 +671,8 @@ const startEncoding = async () => {
     return form.outputFile || defaultOutputFile.value
   })()
 
-  const useAutoOutputStrategy = outputAutoMode.value && Boolean(resolvedFinalOutput)
-  const safeOutputPath = useAutoOutputStrategy ? buildSafeOutputPath(resolvedFinalOutput, form.choice) : null
-  const encodeOutputFile = useAutoOutputStrategy && safeOutputPath ? safeOutputPath : resolvedFinalOutput
+  const safeOutputPath = buildSafeOutputPath(resolvedFinalOutput)
+  const encodeOutputFile = safeOutputPath || resolvedFinalOutput
 
   exitPostProcessing()
 
@@ -707,7 +708,7 @@ const startEncoding = async () => {
     inputFile: form.inputFile,
   }
 
-  if (useAutoOutputStrategy && safeOutputPath) {
+  if (safeOutputPath && resolvedFinalOutput) {
     if (SelectedLanguage.value === 'zh') {
       logOutput.value += `使用临时输出文件: ${safeOutputPath}\n完成后将重命名为: ${resolvedFinalOutput}\n`
     } else {
@@ -724,7 +725,7 @@ const startEncoding = async () => {
     paramsToEncode.outputFile,
     paramsToEncode.inputFile,
   ]
-
+  
   isEncoding.value = true
   if (progressHideTimer) {
     clearTimeout(progressHideTimer)
@@ -736,8 +737,8 @@ const startEncoding = async () => {
   try {
     const payload = {
       args,
-      finalOutputPath: useAutoOutputStrategy ? resolvedFinalOutput : null,
-      safeOutputPath: useAutoOutputStrategy ? safeOutputPath : null,
+      finalOutputPath: resolvedFinalOutput,
+      safeOutputPath: safeOutputPath,
     }
     await ipcRenderer.invoke('run-c-program', payload)
     // C 程序输出将在 'console-output' 事件中接收
