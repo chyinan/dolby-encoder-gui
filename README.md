@@ -19,7 +19,7 @@ A tidy Electron + Vue 3 desktop companion that wraps `encode.exe`, orchestrates 
 | OS target | Windows (Electron build) |
 | Core engine | Dolby Encoding Engine 5.x (`dee.exe`) |
 | Extra tooling | `deew` Python package · `ffmpeg` for final mux |
-| Languages | English · 中文 |
+| Languages | English · Chinese |
 
 ---
 
@@ -29,7 +29,7 @@ A tidy Electron + Vue 3 desktop companion that wraps `encode.exe`, orchestrates 
 - Settings dialog to persist the Dolby engine root (`dee.exe` + `xml_templates`).
 - Parameter persistence (`last_params.txt`) to restore the latest successful encode.
 - Post-processing pipeline for Blu-ray: run `deew` → clean intermediates → remux with `ffmpeg` → final `.m4a`.
-- Bilingual UI toggle (English / 中文) plus quick keyboard shortcuts.
+- Bilingual UI toggle (English / Chinese) plus quick keyboard shortcuts.
 
 ---
 
