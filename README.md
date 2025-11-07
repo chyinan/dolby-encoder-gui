@@ -78,7 +78,7 @@ During the Blu-ray profile, the UI holds at 99% with a "converting" toast while 
 ## ⚙️ Configuration Tips
 
 - **Engine Directory** – stored in Electron user-data. Change it via Settings without editing env vars.
-- **Language menu** – `Ctrl/Cmd+Shift+E` (English) · `Ctrl/Cmd+Shift+C` (中文).
+- **Language menu** – `Ctrl/Cmd+Shift+E` (English) · `Ctrl/Cmd+Shift+C` (Chinese).
 - **Paths** – avoid double quotes in file paths; the UI guards against illegal characters.
 - **Temp cleanup** – Blu-ray workflow removes intermediate `.mlp/.eb3/.mll/.log` files automatically.
 
