@@ -73,6 +73,12 @@ npm run electron:build
 
 During the Blu-ray profiles, the UI holds at 99% with a "converting" toast while `deew`/`deezy` and `ffmpeg` finish. When everything succeeds you’ll see `Encoding finished, exit code: 0` and the progress bar snaps to 100%.
 
+### ▶ One‑click launch (Windows)
+
+Once the environment is ready (DEE root selected, and `deew`/`deezy`/`ffmpeg` are on PATH), you can launch the app by double‑clicking:
+
+- `One click launch GUI.bat` (in the repository root)
+
 ## 📸 Screenshots
 
  ![Main workflow UI](./screenshot_EN.png)
@@ -160,6 +166,12 @@ npm run electron:build
 5. 选择 ADM WAV 输入、输出文件名，挑选所需编码流程并开始。
 
 Blu-ray 流程中，进度条会在 99% 停留并提示“正在转换…”，待 `deew`/`deezy` 与 `ffmpeg` 完成后才显示 100%。
+
+### ▶ 一键启动（Windows）
+
+当环境准备完成（已选择 DEE 根目录，且 `deew`/`deezy`/`ffmpeg` 已加入 PATH）时，可直接双击仓库根目录的批处理脚本启动应用：
+
+- `One click launch GUI.bat`
 
 ## 📸 截图
 
