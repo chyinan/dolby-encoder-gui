@@ -16,7 +16,7 @@ Designed for creators who need an easier way to render ADM BWF projects into Tru
 | Capability | Details |
 | --- | --- |
 | Supported inputs | ADM BWF (Atmos mixes) |
-| Output workflows | Atmos EC3 · Atmos M4A · Atmos TrueHD (MLP) · Dolby Digital Plus 7.1 for Blu-ray · Dolby Atmos M4A 5.1.2 for Blu-ray |
+| Output workflows | Atmos EC3 · Atmos M4A · Atmos TrueHD (MLP) · Dolby Digital Plus 7.1 for Blu-ray<br>· Dolby Atmos M4A 5.1.2 for Blu-ray |
 | OS target | Windows (Electron build) |
 | Core engine | Dolby Encoding Engine 5.x (`dee.exe`) |
 | Extra tooling | `deew` Python package · `deezy` CLI · `ffmpeg` for final mux |
