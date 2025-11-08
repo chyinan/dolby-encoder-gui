@@ -28,6 +28,7 @@
             <el-radio :value="2">{{ t('optionM4A') }}</el-radio>
             <el-radio :value="3">{{ t('optionTrueHD') }}</el-radio>
             <el-radio :value="4">{{ t('optionDDPBluRay') }}</el-radio>
+            <el-radio :value="5">{{ t('optionAtmosBluRay') }}</el-radio>
           </el-radio-group>
         </el-form-item>
 
@@ -113,6 +114,7 @@ const messages = {
     optionM4A: 'Dolby Atmos M4A',
     optionTrueHD: 'Dolby Atmos TrueHD（MLP）',
     optionDDPBluRay: 'Dolby Digital Plus 7.1（Blu-ray）',
+    optionAtmosBluRay: 'Dolby Atmos M4A 7.1（Blu-ray）',
     startTime: '起始时间',
     endTime: '结束时间',
     prependSilence: '开头静音时长',
@@ -136,7 +138,7 @@ const messages = {
     cancelRequested: '已请求取消编码...',
     cancelEncodingFailed: '取消编码失败: ',
     encodingInProgress: '编码任务正在进行中。',
-    postProcessMessage: '正在转换为 7.1 声道 Dolby Digital Plus，请稍候...',
+    postProcessMessage: '正在执行 Blu-ray 后处理（DeeW/Deezy + ffmpeg），请稍候...',
     loadingLast: '正在加载上次参数...',
     loadedLastOk: '成功加载上次参数。',
     loadedLastNone: '未找到有效的上次操作记录。',
@@ -168,6 +170,7 @@ const messages = {
     optionM4A: 'Dolby Atmos M4A',
     optionTrueHD: 'Dolby Atmos TrueHD (MLP)',
     optionDDPBluRay: 'Dolby Digital Plus 7.1 (Blu-ray)',
+    optionAtmosBluRay: 'Dolby Atmos M4A 7.1 (Blu-ray)',
     startTime: 'Start Time',
     endTime: 'End Time',
     prependSilence: 'Leading Silence',
@@ -191,7 +194,7 @@ const messages = {
     cancelRequested: 'Cancellation requested...',
     cancelEncodingFailed: 'Failed to cancel encoding: ',
     encodingInProgress: 'Encoding already in progress.',
-    postProcessMessage: 'Converting via DeeW/ffmpeg… please wait.',
+    postProcessMessage: 'Converting via DeeW/Deezy + ffmpeg… please wait.',
     loadingLast: 'Loading last parameters...',
     loadedLastOk: 'Successfully loaded last parameters.',
     loadedLastNone: 'No valid previous operation found.',
@@ -211,6 +214,8 @@ const messages = {
 }
 
 const t = (key) => messages[lang.value]?.[key] ?? key
+
+const isBluRayChoice = (choice) => choice === 4 || choice === 5
 
 const form = reactive({
   choice: 1, // 默认为 EC3
@@ -319,6 +324,7 @@ const getOutputExtensionByChoice = (choice) => {
   if (choice === 2) return 'm4a'
   if (choice === 3) return 'mlp'
   if (choice === 4) return 'm4a'
+  if (choice === 5) return 'm4a'
   return 'ec3'
 }
 
@@ -430,7 +436,7 @@ onMounted(() => {
         const match = translated.match(/Overall progress:\s*([0-9]+(?:\.[0-9]+)?)/gi)
         if (match) {
           const value = Number(match[0].split(':')[1].trim())
-          if (form.choice === 4 && !postProcessing.value && value >= 99) {
+          if (isBluRayChoice(form.choice) && !postProcessing.value && value >= 99) {
             enterPostProcessing()
           } else if (!postProcessing.value) {
             progress.value = Math.min(100, Number.isFinite(value) ? value : 0)
@@ -482,7 +488,7 @@ onMounted(() => {
         return
       }
       const numericValue = Number.isFinite(value) ? value : 0
-      if (form.choice === 4 && numericValue >= 99) {
+      if (isBluRayChoice(form.choice) && numericValue >= 99) {
         progress.value = 99
         showProgress.value = true
         return
@@ -569,6 +575,7 @@ const selectOutputFile = async () => {
         { choice: 2, label: t('optionM4A'), extension: 'm4a' },
         { choice: 3, label: t('optionTrueHD'), extension: 'mlp' },
         { choice: 4, label: t('optionDDPBluRay'), extension: 'm4a' },
+        { choice: 5, label: t('optionAtmosBluRay'), extension: 'm4a' },
       ]
       const selectedExtension = form.choice === 1
         ? 'ec3'

@@ -16,10 +16,10 @@ Designed for creators who need an easier way to render ADM BWF projects into Tru
 | Capability | Details |
 | --- | --- |
 | Supported inputs | ADM BWF (Atmos mixes) |
-| Output workflows | Atmos EC3 · Atmos M4A · Atmos TrueHD (MLP) · Dolby Digital Plus 7.1 for Blu-ray |
+| Output workflows | Atmos EC3 · Atmos M4A · Atmos TrueHD (MLP) · Dolby Digital Plus 7.1 for Blu-ray · Dolby Atmos M4A 7.1 for Blu-ray |
 | OS target | Windows (Electron build) |
 | Core engine | Dolby Encoding Engine 5.x (`dee.exe`) |
-| Extra tooling | `deew` Python package · `ffmpeg` for final mux |
+| Extra tooling | `deew` Python package · `deezy` CLI · `ffmpeg` for final mux |
 | Languages | English · Chinese |
 
 ---
@@ -29,7 +29,7 @@ Designed for creators who need an easier way to render ADM BWF projects into Tru
 - Real-time log streaming and progress bar synced with `dee.exe` output.
 - Settings dialog to persist the Dolby engine root (`dee.exe` + `xml_templates`).
 - Parameter persistence (`last_params.txt`) to restore the latest successful encode.
-- Post-processing pipeline for Blu-ray: run `deew` → clean intermediates → remux with `ffmpeg` → final `.m4a`.
+- Post-processing pipeline for Blu-ray: run `deew`/`deezy` → clean intermediates → remux with `ffmpeg` → final `.m4a`.
 - Bilingual UI toggle (English / Chinese) plus quick keyboard shortcuts.
 
 ---
@@ -41,6 +41,7 @@ Designed for creators who need an easier way to render ADM BWF projects into Tru
   - Preferred: Place `deew.exe` in PATH (single-file executable).
   - Fallback: Install via `pip install deew` (requires Python 3.9+ accessible via `python` or `py` on PATH).
   - ⚠️ **First-time setup**: On first run, `deew` will prompt for configuration and ask you to specify the Dolby Encoding Engine folder path and ffmpeg path.
+- **deezy** – install the CLI and keep `deezy` (or `deezy.exe`) on PATH so the app can invoke it directly.
 - **ffmpeg** – ensure the binary is present on PATH.
 - **Dolby Encoding Engine** (DEE 5.1–5.2). Keep its `dee.exe`, `xml_templates/`, `DolbyTemp/` folders intact.
 
@@ -70,7 +71,7 @@ npm run electron:build
    ```
 5. Provide ADM WAV input + output name, pick the workflow, hit **Start Encoding**.
 
-During the Blu-ray profile, the UI holds at 99% with a "converting" toast while `deew` and `ffmpeg` finish. When everything succeeds you’ll see `Encoding finished, exit code: 0` and the progress bar snaps to 100%.
+During the Blu-ray profiles, the UI holds at 99% with a "converting" toast while `deew`/`deezy` and `ffmpeg` finish. When everything succeeds you’ll see `Encoding finished, exit code: 0` and the progress bar snaps to 100%.
 
 ## 📸 Screenshots
 
@@ -83,8 +84,9 @@ During the Blu-ray profile, the UI holds at 99% with a "converting" toast while 
 - **Engine Directory** – stored in Electron user-data. Change it via Settings without editing env vars.
 - **Language menu** – `Ctrl/Cmd+Shift+E` (English) · `Ctrl/Cmd+Shift+C` (Chinese).
 - **Paths** – avoid double quotes in file paths; the UI guards against illegal characters.
-- **Temp cleanup** – Blu-ray workflow removes intermediate `.mlp/.eb3/.mll/.log` files automatically.
+- **Temp cleanup** – Blu-ray workflows remove intermediate `.mlp/.eb3/.mll/.log/.ec3` files automatically.
 - **deew first-run setup** – When `deew` runs for the first time, it will display a configuration dialog asking for the Dolby Encoding Engine folder path and ffmpeg path. Complete this one-time setup before encoding.
+- **deezy availability** – Make sure `deezy` resolves from PATH; no additional configuration is required beyond installing the CLI.
 
 ---
 
@@ -92,6 +94,7 @@ During the Blu-ray profile, the UI holds at 99% with a "converting" toast while 
 
 - Progress stuck at 0% ➜ check `dee.exe` logs still emit `Overall progress:` lines.
 - `deew` execution fails ➜ ensure either `deew.exe` is in PATH, or Python 3.9+ with `deew` package installed (`pip install deew`) is accessible on PATH. On first run, complete the configuration dialog that prompts for Dolby Encoding Engine and ffmpeg paths.
+- `deezy` execution fails ➜ confirm the CLI is installed and the `deezy` command is reachable from PATH.
 - `ffmpeg` header error ➜ confirm you're using a build that supports `-c:a copy` with E-AC-3 inside MP4 (`ffmpeg` 5.x/6.x works).
 - Need a fresh start ➜ delete `last_params.txt` in the project root.
 
@@ -109,6 +112,7 @@ During the Blu-ray profile, the UI holds at 99% with a "converting" toast while 
 
 - Dolby Encoding Engine (commercial software) for the core transcodes.
 - [deew](https://github.com/pcroland/deew) for the open-source wrapper enabling the Blu-ray Dolby Digital Plus pipeline.
+- [deezy](https://github.com/jessielw/DeeZy) for the Atmos Blu-ray remux helper.
 - ffmpeg project for the MP4 remuxing stage.
 
 ---
@@ -123,7 +127,7 @@ During the Blu-ray profile, the UI holds at 99% with a "converting" toast while 
 - 实时跟踪 `dee.exe` 日志及进度条。
 - 设置窗体可持久化保存 Dolby 引擎根目录。
 - `last_params.txt` 自动记录最近一次成功参数。
-- Blu-ray 流程自动调用 `deew` → 清理中间文件 → `ffmpeg` 重新封装为 `.m4a`。
+- Blu-ray 流程自动调用 `deew`/`deezy` → 清理中间文件 → `ffmpeg` 重新封装为 `.m4a`。
 - 支持中英文界面，一键切换。
 
 ## 📦 环境依赖
@@ -133,6 +137,7 @@ During the Blu-ray profile, the UI holds at 99% with a "converting" toast while 
   - 推荐方式：将 `deew.exe` 添加到 PATH 环境变量中（单文件可执行程序）。
   - 备选方式：通过 `pip install deew` 安装（需要 Python 3.9+ 且 `python`/`py` 命令可用）。
   - ⚠️ **首次配置**：首次运行 `deew` 时会弹出配置对话框，需要填写 Dolby Encoding Engine 文件夹路径和 ffmpeg 路径。
+- **deezy** – 安装 CLI 并确保 `deezy`（或 `deezy.exe`）已加入 PATH，应用即可直接调用。
 - **ffmpeg**（需添加至 PATH）。
 - **Dolby Encoding Engine**（存放 `dee.exe` 与其 `xml_templates/`、`DolbyTemp/` 等目录）。
 
@@ -154,7 +159,7 @@ npm run electron:build
    ```
 5. 选择 ADM WAV 输入、输出文件名，挑选所需编码流程并开始。
 
-Blu-ray 流程中，进度条会在 99% 停留并提示“正在转换…”，待 `deew` 与 `ffmpeg` 完成后才显示 100%。
+Blu-ray 流程中，进度条会在 99% 停留并提示“正在转换…”，待 `deew`/`deezy` 与 `ffmpeg` 完成后才显示 100%。
 
 ## 📸 截图
 
@@ -165,13 +170,15 @@ Blu-ray 流程中，进度条会在 99% 停留并提示“正在转换…”，�
 - **dee 目录** 通过设置界面修改，无需手动编辑配置文件。
 - **语言切换** 快捷键：`Ctrl/Cmd+Shift+E`（英文）、`Ctrl/Cmd+Shift+C`（中文）。
 - **路径合法性**：UI 会校验双引号等非法字符，避免编解码失败。
-- **临时文件**：Blu-ray 流程结束后会自动删除 `.mlp/.eb3/.mll/.log` 等中间文件。
+- **临时文件**：Blu-ray 流程结束后会自动删除 `.mlp/.eb3/.ec3/.mll/.log` 等中间文件。
 - **deew 首次配置**：首次运行 `deew` 时会显示配置对话框，要求填写 Dolby Encoding Engine 文件夹路径和 ffmpeg 路径，完成此一次性配置后才能正常编码。
+- **deezy 命令**：确认 `deezy` 命令可在命令行直接执行，无需额外配置。
 
 ## 🧪 常见问题
 
 - 进度条停在 0% ➜ 确认 `dee.exe` 日志仍输出 `Overall progress:`。
 - `deew` 执行失败 ➜ 确认已将 `deew.exe` 添加至 PATH 环境变量，或已安装 Python 3.9+ 并通过 `pip install deew` 安装 deew 包。首次运行时会弹出配置对话框，需要填写 Dolby Encoding Engine 和 ffmpeg 路径。
+- `deezy` 执行失败 ➜ 检查 CLI 是否已安装并且 `deezy` 命令可在 PATH 中找到。
 - `ffmpeg` 报头部错误 ➜ 使用支持 E-AC-3 copy 的 `ffmpeg` 版本并确保在PATH环境变量中。
 - 重置参数 ➜ 删除项目根目录下的 `last_params.txt`。
 
@@ -185,6 +192,7 @@ Blu-ray 流程中，进度条会在 99% 停留并提示“正在转换…”，�
 
 - Dolby Encoding Engine（商业软件）。
 - [deew](https://github.com/pcroland/deew) 开源项目提供了 Blu-ray 流程核心能力。
+- [deezy](https://github.com/jessielw/DeeZy) 提供 Atmos Blu-ray 封装辅助。
 - ffmpeg 项目提供 MP4 重封装能力。
 
 ---

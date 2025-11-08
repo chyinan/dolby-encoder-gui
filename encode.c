@@ -201,6 +201,73 @@ static void remove_file_if_exists(const char *path) {
     }
 }
 
+#ifdef _WIN32
+static ULONGLONG get_system_filetime_ticks(void) {
+    FILETIME ft;
+    GetSystemTimeAsFileTime(&ft);
+    return ((ULONGLONG)ft.dwHighDateTime << 32) | (ULONGLONG)ft.dwLowDateTime;
+}
+
+static int find_recent_ec3_in_directory(const char *directory, ULONGLONG threshold, char *out_path, size_t out_size) {
+    if (!out_path || out_size == 0) return 0;
+    char base[1024];
+    if (directory && directory[0]) {
+        copy_string(base, sizeof(base), directory);
+    } else {
+        copy_string(base, sizeof(base), ".");
+    }
+    normalize_slashes(base);
+
+    char search_pattern[1024];
+    copy_string(search_pattern, sizeof(search_pattern), base);
+    size_t len = strlen(search_pattern);
+    if (len == 0) {
+        copy_string(search_pattern, sizeof(search_pattern), "*");
+        len = strlen(search_pattern);
+    }
+    if (search_pattern[len - 1] == '/') {
+        search_pattern[len - 1] = '\\';
+    }
+    if (search_pattern[len - 1] != '\\') {
+        if (len + 1 < sizeof(search_pattern)) {
+            search_pattern[len++] = '\\';
+            search_pattern[len] = '\0';
+        }
+    }
+    strncat(search_pattern, "*.ec3", sizeof(search_pattern) - len - 1);
+
+    WIN32_FIND_DATAA data;
+    HANDLE handle = FindFirstFileA(search_pattern, &data);
+    if (handle == INVALID_HANDLE_VALUE) {
+        return 0;
+    }
+
+    int found = 0;
+    ULONGLONG bestTicks = 0;
+    char candidate_path[1024] = {0};
+    do {
+        if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) continue;
+        ULONGLONG fileTicks = ((ULONGLONG)data.ftLastWriteTime.dwHighDateTime << 32) | (ULONGLONG)data.ftLastWriteTime.dwLowDateTime;
+        if (fileTicks < threshold) continue;
+        if (!found || fileTicks > bestTicks) {
+            char combined[1024];
+            build_path(combined, sizeof(combined), base, data.cFileName);
+            copy_string(candidate_path, sizeof(candidate_path), combined);
+            bestTicks = fileTicks;
+            found = 1;
+        }
+    } while (FindNextFileA(handle, &data));
+
+    FindClose(handle);
+
+    if (found) {
+        copy_string(out_path, out_size, candidate_path);
+        return 1;
+    }
+    return 0;
+}
+#endif
+
 
 static void copy_string(char *dest, size_t dest_size, const char *src) {
     if (!dest || dest_size == 0) {
@@ -290,7 +357,7 @@ void trim_newline(char *str) {
 
 // --------- 持久化上次操作参数的结构与函数 ---------
 typedef struct {
-    int choice; /* 1: ec3, 2: m4a, 3: mlp, 4: ddp bluray */
+    int choice; /* 1: ec3, 2: m4a, 3: mlp, 4: ddp bluray, 5: atmos m4a bluray */
     char start[64];
     char end[64];
     char prepend_silence[64];
@@ -589,6 +656,8 @@ int main(int argc, char *argv[])
                  copy_string(output_file_buf, sizeof(output_file_buf), "D:\\atmos.mlp");
              } else if (choice == 4) {
                  copy_string(output_file_buf, sizeof(output_file_buf), "D:\\atmos_bluray.m4a");
+             } else if (choice == 5) {
+                 copy_string(output_file_buf, sizeof(output_file_buf), "D:\\atmos_bluray_atmos.m4a");
              }
         }
         if (input_file_buf[0] == '\0') {
@@ -601,18 +670,23 @@ int main(int argc, char *argv[])
             ensure_extension(output_file_buf, sizeof(output_file_buf), ".m4a");
         } else if (choice == 3) {
             ensure_extension(output_file_buf, sizeof(output_file_buf), ".mlp");
-        } else if (choice == 4) {
+        } else if (choice == 4 || choice == 5) {
             ensure_extension(output_file_buf, sizeof(output_file_buf), ".m4a");
         }
 
         copy_string(final_output_path, sizeof(final_output_path), output_file_buf);
-        if (choice == 4) {
+        if (choice == 4 || choice == 5) {
             replace_extension(final_output_path, intermediate_mlp_path, sizeof(intermediate_mlp_path), ".mlp");
-            replace_extension(final_output_path, intermediate_ddp_path, sizeof(intermediate_ddp_path), ".eb3");
             replace_extension(final_output_path, intermediate_ddp_alt_ec3, sizeof(intermediate_ddp_alt_ec3), ".ec3");
-            replace_extension(final_output_path, intermediate_ddp_alt_ddp, sizeof(intermediate_ddp_alt_ddp), ".ddp");
             replace_extension(intermediate_mlp_path, inter_mll_path, sizeof(inter_mll_path), ".mlp.mll");
             replace_extension(intermediate_mlp_path, inter_log_path, sizeof(inter_log_path), ".mlp.log");
+            if (choice == 4) {
+                replace_extension(final_output_path, intermediate_ddp_path, sizeof(intermediate_ddp_path), ".eb3");
+                replace_extension(final_output_path, intermediate_ddp_alt_ddp, sizeof(intermediate_ddp_alt_ddp), ".ddp");
+            } else {
+                intermediate_ddp_path[0] = '\0';
+                intermediate_ddp_alt_ddp[0] = '\0';
+            }
             dee_output_target = intermediate_mlp_path;
         } else {
             intermediate_mlp_path[0] = '\0';
@@ -634,7 +708,7 @@ int main(int argc, char *argv[])
             template_xml = template_m4a_path;
         } else if (choice == 3) {
             template_xml = template_mlp_path;
-        } else if (choice == 4) {
+        } else if (choice == 4 || choice == 5) {
             template_xml = template_mlp_path;
         } else {
             fprintf(stderr, "错误: 无效的编码选项（%d）。\n", choice);
@@ -656,7 +730,8 @@ int main(int argc, char *argv[])
         printf("2. ADM BWF 编码为 atmos.m4a\n");
         printf("3. ADM BWF 编码为 atmos.mlp\n");
         printf("4. ADM BWF 编码为 7.1ch Dolby Digital Plus (Blu-ray)\n");
-        printf("5. 重复上一次操作\n");
+        printf("5. ADM BWF 编码为 Dolby Atmos M4A 7.1 (Blu-ray)\n");
+        printf("6. 重复上一次操作\n");
         printf("0. 退出程序\n");
         printf("请输入选项: ");
 
@@ -673,7 +748,7 @@ int main(int argc, char *argv[])
         }
 
         /* 如果选择 4：直接使用上次保存的参数并跳过交互 */
-        if (choice == 5) {
+        if (choice == 6) {
             if (!last_params.valid) {
                 printf("没有可用的上一次操作记录，无法重复。\n");
                 continue;
@@ -695,6 +770,8 @@ int main(int argc, char *argv[])
                 copy_string(output_file_buf, sizeof(output_file_buf), "D:\\atmos.mlp");
             } else if (choice == 4) {
                 copy_string(output_file_buf, sizeof(output_file_buf), "D:\\atmos_bluray.m4a");
+            } else if (choice == 5) {
+                copy_string(output_file_buf, sizeof(output_file_buf), "D:\\atmos_bluray_atmos.m4a");
             } else {
                 copy_string(output_file_buf, sizeof(output_file_buf), "D:\\atmos.ec3");
             }
@@ -711,7 +788,7 @@ int main(int argc, char *argv[])
                 template_xml = template_m4a_path;
             } else if (choice == 3) {
                 template_xml = template_mlp_path;
-            } else if (choice == 4) {
+            } else if (choice == 4 || choice == 5) {
                 template_xml = template_mlp_path;
             }
             if (choice == 1) {
@@ -720,7 +797,7 @@ int main(int argc, char *argv[])
                 ensure_extension(output_file_buf, sizeof(output_file_buf), ".m4a");
             } else if (choice == 3) {
                 ensure_extension(output_file_buf, sizeof(output_file_buf), ".mlp");
-            } else if (choice == 4) {
+            } else if (choice == 4 || choice == 5) {
                 ensure_extension(output_file_buf, sizeof(output_file_buf), ".m4a");
             }
             printf("使用上一次参数：choice=%d, start='%s', end='%s', prepend='%s', append='%s', out='%s'\n", choice, start, end, prepend_silence, append_silence, output_file_buf);
@@ -747,6 +824,8 @@ int main(int argc, char *argv[])
                     copy_string(output_file_buf, sizeof(output_file_buf), "D:\\atmos.mlp");
                 } else if (choice == 4) {
                     copy_string(output_file_buf, sizeof(output_file_buf), "D:\\atmos_bluray.m4a");
+                } else if (choice == 5) {
+                    copy_string(output_file_buf, sizeof(output_file_buf), "D:\\atmos_bluray_atmos.m4a");
                 }
                 copy_string(input_file_buf, sizeof(input_file_buf), "D:\\ADM.wav");
         }
@@ -757,7 +836,7 @@ int main(int argc, char *argv[])
             template_xml = template_m4a_path;
         } else if (choice == 3) {
             template_xml = template_mlp_path;
-        } else if (choice == 4) {
+        } else if (choice == 4 || choice == 5) {
             template_xml = template_mlp_path;
         } else {
             printf("无效选项，请重新输入。\n");
@@ -770,18 +849,23 @@ int main(int argc, char *argv[])
             ensure_extension(output_file_buf, sizeof(output_file_buf), ".m4a");
         } else if (choice == 3) {
             ensure_extension(output_file_buf, sizeof(output_file_buf), ".mlp");
-        } else if (choice == 4) {
+        } else if (choice == 4 || choice == 5) {
             ensure_extension(output_file_buf, sizeof(output_file_buf), ".m4a");
         }
 
         copy_string(final_output_path, sizeof(final_output_path), output_file_buf);
-        if (choice == 4) {
+        if (choice == 4 || choice == 5) {
             replace_extension(final_output_path, intermediate_mlp_path, sizeof(intermediate_mlp_path), ".mlp");
-            replace_extension(final_output_path, intermediate_ddp_path, sizeof(intermediate_ddp_path), ".eb3");
             replace_extension(final_output_path, intermediate_ddp_alt_ec3, sizeof(intermediate_ddp_alt_ec3), ".ec3");
-            replace_extension(final_output_path, intermediate_ddp_alt_ddp, sizeof(intermediate_ddp_alt_ddp), ".ddp");
             replace_extension(intermediate_mlp_path, inter_mll_path, sizeof(inter_mll_path), ".mll");
             replace_extension(intermediate_mlp_path, inter_log_path, sizeof(inter_log_path), ".mlp.log");
+            if (choice == 4) {
+                replace_extension(final_output_path, intermediate_ddp_path, sizeof(intermediate_ddp_path), ".eb3");
+                replace_extension(final_output_path, intermediate_ddp_alt_ddp, sizeof(intermediate_ddp_alt_ddp), ".ddp");
+            } else {
+                intermediate_ddp_path[0] = '\0';
+                intermediate_ddp_alt_ddp[0] = '\0';
+            }
             dee_output_target = intermediate_mlp_path;
         } else {
             intermediate_mlp_path[0] = '\0';
@@ -1047,6 +1131,108 @@ encode_process:
         remove_file_if_exists(intermediate_ddp_path);
         remove_file_if_exists(intermediate_ddp_alt_ec3);
         remove_file_if_exists(intermediate_ddp_alt_ddp);
+        remove_file_if_exists(inter_mll_path);
+        remove_file_if_exists(inter_log_path);
+    } else if (choice == 5) {
+        printf("dee 完成 MLP 导出，开始调用 deezy 生成 Dolby Atmos M4A 7.1 (Blu-ray)...\n");
+        if (!intermediate_mlp_path[0]) {
+            replace_extension(final_output_path, intermediate_mlp_path, sizeof(intermediate_mlp_path), ".mlp");
+        }
+
+        char mlp_directory[512];
+        mlp_directory[0] = '\0';
+        if (intermediate_mlp_path[0]) {
+            copy_string(mlp_directory, sizeof(mlp_directory), intermediate_mlp_path);
+            normalize_slashes(mlp_directory);
+            char *last_sep = strrchr(mlp_directory, '\\');
+            if (!last_sep) last_sep = strrchr(mlp_directory, '/');
+            if (last_sep) {
+                if (last_sep == mlp_directory + 2 && mlp_directory[1] == ':') {
+                    *(last_sep + 1) = '\0';
+                } else {
+                    *last_sep = '\0';
+                }
+            } else {
+                copy_string(mlp_directory, sizeof(mlp_directory), ".");
+            }
+        } else {
+            copy_string(mlp_directory, sizeof(mlp_directory), ".");
+        }
+
+#ifdef _WIN32
+        ULONGLONG search_threshold = get_system_filetime_ticks();
+#endif
+
+        char deezy_cmd[4096];
+        int deezy_len = snprintf(deezy_cmd, sizeof(deezy_cmd),
+            "cmd /C \"chcp 65001 > nul && cd /d \"%s\" && (deezy encode atmos --atmos-mode bluray --bitrate 1536 \"%s\" || deezy.exe encode atmos --atmos-mode bluray --bitrate 1536 \"%s\")\"",
+            mlp_directory,
+            intermediate_mlp_path,
+            intermediate_mlp_path);
+        if (deezy_len < 0 || deezy_len >= (int)sizeof(deezy_cmd)) {
+            fprintf(stderr, "错误: 构建 deezy 命令失败。\n");
+            if (interactive_mode) system("pause");
+            return 1;
+        }
+
+        printf("执行命令: %s\n", deezy_cmd);
+        fflush(stdout);
+        int deezy_code = system(deezy_cmd);
+        if (deezy_code != 0) {
+            fprintf(stderr, "deezy 执行失败 (exit=%d)，请确认 deezy 已安装并在 PATH 中。当前命令: %s\n", deezy_code, deezy_cmd);
+            if (interactive_mode) system("pause");
+            return 1;
+        }
+
+        char deezy_ec3_path[1024];
+        deezy_ec3_path[0] = '\0';
+#ifdef _WIN32
+        if (!find_recent_ec3_in_directory(mlp_directory, search_threshold, deezy_ec3_path, sizeof(deezy_ec3_path))) {
+            fprintf(stderr, "未在目录 %s 下找到 deezy 生成的最新 EC3 文件，请检查 deezy 输出。\n", mlp_directory);
+            if (interactive_mode) system("pause");
+            return 1;
+        }
+#else
+        if (!intermediate_ddp_alt_ec3[0] || !file_exists(intermediate_ddp_alt_ec3)) {
+            fprintf(stderr, "未找到 deezy 生成的 EC3 文件。\n");
+            if (interactive_mode) system("pause");
+            return 1;
+        }
+        copy_string(deezy_ec3_path, sizeof(deezy_ec3_path), intermediate_ddp_alt_ec3);
+#endif
+
+        if (!file_exists(deezy_ec3_path)) {
+            fprintf(stderr, "deezy 生成的 EC3 文件不存在: %s\n", deezy_ec3_path);
+            if (interactive_mode) system("pause");
+            return 1;
+        }
+
+        printf("找到 deezy 输出的 EC3 文件: %s\n", deezy_ec3_path);
+        ensure_parent_directory(final_output_path);
+
+        char ffmpeg_cmd[4096];
+        int ffmpeg_len = snprintf(ffmpeg_cmd, sizeof(ffmpeg_cmd),
+            "ffmpeg -y -i \"%s\" -c:a copy -movflags +faststart -f mp4 \"%s\"",
+            deezy_ec3_path, final_output_path);
+        if (ffmpeg_len < 0 || ffmpeg_len >= (int)sizeof(ffmpeg_cmd)) {
+            fprintf(stderr, "错误: 构建 ffmpeg 命令失败。\n");
+            if (interactive_mode) system("pause");
+            return 1;
+        }
+
+        printf("执行命令: %s\n", ffmpeg_cmd);
+        fflush(stdout);
+        int ffmpeg_code = system(ffmpeg_cmd);
+        if (ffmpeg_code != 0 || !file_exists(final_output_path)) {
+            fprintf(stderr, "ffmpeg 转封装失败 (exit=%d)，请检查 ffmpeg 是否在 PATH 中。\n", ffmpeg_code);
+            if (interactive_mode) system("pause");
+            return 1;
+        }
+
+        printf("已生成最终输出文件: %s\n", final_output_path);
+
+        remove_file_if_exists(intermediate_mlp_path);
+        remove_file_if_exists(deezy_ec3_path);
         remove_file_if_exists(inter_mll_path);
         remove_file_if_exists(inter_log_path);
     }

@@ -1,9 +1,9 @@
-choice=2
-start=
+choice=5
+start=00:00:10:00
 end=
-prepend_silence=6
+prepend_silence=
 append_silence=
-template_xml=D:\Dolby_Encoding_Engine\xml_templates\encode_to_atmos_ddp\atmos_mezz_encode_to_atmos_ddp_mp4.xml
-output_file=D:\カワキヲアメク.m4a
+template_xml=D:\Dolby_Encoding_Engine\xml_templates\encode_to_dthd\atmos_mezz_encode_to_dthd_mlp.xml
+output_file=D:\Okay, Goodbye.m4a
 input_file=D:\ADM.wav
 valid=1
