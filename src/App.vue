@@ -170,7 +170,7 @@ const messages = {
     optionM4A: 'Dolby Atmos M4A',
     optionTrueHD: 'Dolby Atmos TrueHD (MLP)',
     optionDDPBluRay: 'Dolby Digital Plus 7.1 (Blu-ray)',
-    optionAtmosBluRay: 'Dolby Atmos M4A 7.1 (Blu-ray)',
+    optionAtmosBluRay: 'Dolby Atmos M4A 5.1.2 (Blu-ray)',
     startTime: 'Start Time',
     endTime: 'End Time',
     prependSilence: 'Leading Silence',
