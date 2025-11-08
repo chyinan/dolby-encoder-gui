@@ -40,7 +40,7 @@ Designed for creators who need an easier way to render ADM BWF projects into Tru
 - **deew** – available in two ways:
   - Preferred: Place `deew.exe` in PATH (single-file executable).
   - Fallback: Install via `pip install deew` (requires Python 3.9+ accessible via `python` or `py` on PATH).
-  - ⚠️ **First-time setup**: On first run, `deew` will prompt for configuration and ask you to specify the Dolby Encoding Engine folder path and ffmpeg path.
+  - ⚠️ **First-time setup**: On first run, `deew` opens a command-line configuration prompt asking for the Dolby Encoding Engine folder path and the `ffmpeg` path.
 - **deezy** – install the CLI and keep `deezy` (or `deezy.exe`) on PATH so the app can invoke it directly.
 - **ffmpeg** – ensure the binary is present on PATH.
 - **Dolby Encoding Engine** (DEE 5.1–5.2). Keep its `dee.exe`, `xml_templates/`, `DolbyTemp/` folders intact.
@@ -85,7 +85,7 @@ During the Blu-ray profiles, the UI holds at 99% with a "converting" toast while
 - **Language menu** – `Ctrl/Cmd+Shift+E` (English) · `Ctrl/Cmd+Shift+C` (Chinese).
 - **Paths** – avoid double quotes in file paths; the UI guards against illegal characters.
 - **Temp cleanup** – Blu-ray workflows remove intermediate `.mlp/.eb3/.mll/.log/.ec3` files automatically.
-- **deew first-run setup** – When `deew` runs for the first time, it will display a configuration dialog asking for the Dolby Encoding Engine folder path and ffmpeg path. Complete this one-time setup before encoding.
+- **deew first-run setup** – When `deew` runs for the first time, it pops up a command-line prompt that collects the Dolby Encoding Engine folder path and the `ffmpeg` path. Complete this one-time setup before encoding.
 - **deezy availability** – Make sure `deezy` resolves from PATH; no additional configuration is required beyond installing the CLI.
 
 ---
