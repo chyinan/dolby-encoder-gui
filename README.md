@@ -40,6 +40,7 @@ Designed for creators who need an easier way to render ADM BWF projects into Tru
 - **deew** – available in two ways:
   - Preferred: Place `deew.exe` in PATH (single-file executable).
   - Fallback: Install via `pip install deew` (requires Python 3.9+ accessible via `python` or `py` on PATH).
+  - ⚠️ **First-time setup**: On first run, `deew` will prompt for configuration and ask you to specify the Dolby Encoding Engine folder path and ffmpeg path.
 - **ffmpeg** – ensure the binary is present on PATH.
 - **Dolby Encoding Engine** (DEE 5.1–5.2). Keep its `dee.exe`, `xml_templates/`, `DolbyTemp/` folders intact.
 
@@ -83,13 +84,14 @@ During the Blu-ray profile, the UI holds at 99% with a "converting" toast while 
 - **Language menu** – `Ctrl/Cmd+Shift+E` (English) · `Ctrl/Cmd+Shift+C` (Chinese).
 - **Paths** – avoid double quotes in file paths; the UI guards against illegal characters.
 - **Temp cleanup** – Blu-ray workflow removes intermediate `.mlp/.eb3/.mll/.log` files automatically.
+- **deew first-run setup** – When `deew` runs for the first time, it will display a configuration dialog asking for the Dolby Encoding Engine folder path and ffmpeg path. Complete this one-time setup before encoding.
 
 ---
 
 ## 🧪 Troubleshooting
 
 - Progress stuck at 0% ➜ check `dee.exe` logs still emit `Overall progress:` lines.
-- `deew` execution fails ➜ ensure either `deew.exe` is in PATH, or Python 3.9+ with `deew` package installed (`pip install deew`) is accessible on PATH.
+- `deew` execution fails ➜ ensure either `deew.exe` is in PATH, or Python 3.9+ with `deew` package installed (`pip install deew`) is accessible on PATH. On first run, complete the configuration dialog that prompts for Dolby Encoding Engine and ffmpeg paths.
 - `ffmpeg` header error ➜ confirm you're using a build that supports `-c:a copy` with E-AC-3 inside MP4 (`ffmpeg` 5.x/6.x works).
 - Need a fresh start ➜ delete `last_params.txt` in the project root.
 
@@ -130,6 +132,7 @@ During the Blu-ray profile, the UI holds at 99% with a "converting" toast while 
 - **deew** – 支持两种使用方式：
   - 推荐方式：将 `deew.exe` 添加到 PATH 环境变量中（单文件可执行程序）。
   - 备选方式：通过 `pip install deew` 安装（需要 Python 3.9+ 且 `python`/`py` 命令可用）。
+  - ⚠️ **首次配置**：首次运行 `deew` 时会弹出配置对话框，需要填写 Dolby Encoding Engine 文件夹路径和 ffmpeg 路径。
 - **ffmpeg**（需添加至 PATH）。
 - **Dolby Encoding Engine**（存放 `dee.exe` 与其 `xml_templates/`、`DolbyTemp/` 等目录）。
 
@@ -163,11 +166,12 @@ Blu-ray 流程中，进度条会在 99% 停留并提示“正在转换…”，�
 - **语言切换** 快捷键：`Ctrl/Cmd+Shift+E`（英文）、`Ctrl/Cmd+Shift+C`（中文）。
 - **路径合法性**：UI 会校验双引号等非法字符，避免编解码失败。
 - **临时文件**：Blu-ray 流程结束后会自动删除 `.mlp/.eb3/.mll/.log` 等中间文件。
+- **deew 首次配置**：首次运行 `deew` 时会显示配置对话框，要求填写 Dolby Encoding Engine 文件夹路径和 ffmpeg 路径，完成此一次性配置后才能正常编码。
 
 ## 🧪 常见问题
 
 - 进度条停在 0% ➜ 确认 `dee.exe` 日志仍输出 `Overall progress:`。
-- `deew` 执行失败 ➜ 确认已将 `deew.exe` 添加至 PATH 环境变量，或已安装 Python 3.9+ 并通过 `pip install deew` 安装 deew 包。
+- `deew` 执行失败 ➜ 确认已将 `deew.exe` 添加至 PATH 环境变量，或已安装 Python 3.9+ 并通过 `pip install deew` 安装 deew 包。首次运行时会弹出配置对话框，需要填写 Dolby Encoding Engine 和 ffmpeg 路径。
 - `ffmpeg` 报头部错误 ➜ 使用支持 E-AC-3 copy 的 `ffmpeg` 版本并确保在PATH环境变量中。
 - 重置参数 ➜ 删除项目根目录下的 `last_params.txt`。
 
