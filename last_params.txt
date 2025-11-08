@@ -1,9 +1,9 @@
-choice=5
-start=00:00:10:00
+choice=4
+start=
 end=
 prepend_silence=
 append_silence=
 template_xml=D:\Dolby_Encoding_Engine\xml_templates\encode_to_dthd\atmos_mezz_encode_to_dthd_mlp.xml
-output_file=D:\Okay, Goodbye.m4a
+output_file=D:\カワキヲアメク test.m4a
 input_file=D:\ADM.wav
 valid=1
