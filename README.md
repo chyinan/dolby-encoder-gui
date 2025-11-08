@@ -6,7 +6,7 @@
 [![python](https://img.shields.io/badge/python-3.9+-3776AB.svg)](https://www.python.org/)
 [![license](https://img.shields.io/badge/license-MIT-ff69b4.svg)](./LICENSE)
 
-A open-source GUI for Dolby Encoding Engine (DEE).
+A open-source GUI for Dolby Encoding Engine (DEE).<br>
 Designed for creators who need an easier way to render ADM BWF projects into TrueHD, DD+, or EAC3-JOC deliverables — without touching the command line.
 
 ---
