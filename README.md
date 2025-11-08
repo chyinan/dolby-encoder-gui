@@ -37,8 +37,9 @@ Designed for creators who need an easier way to render ADM BWF projects into Tru
 ## 📦 Requirements
 
 - **Node.js 16+** and npm for development / packaging.
-- **Python 3.9+** accessible via `python` or `py` on PATH (used to launch `deew`).
-- **deew** – install with `pip install deew`.
+- **deew** – available in two ways:
+  - Preferred: Place `deew.exe` in PATH (single-file executable).
+  - Fallback: Install via `pip install deew` (requires Python 3.9+ accessible via `python` or `py` on PATH).
 - **ffmpeg** – ensure the binary is present on PATH.
 - **Dolby Encoding Engine** (DEE 5.1–5.2). Keep its `dee.exe`, `xml_templates/`, `DolbyTemp/` folders intact.
 
@@ -88,8 +89,8 @@ During the Blu-ray profile, the UI holds at 99% with a "converting" toast while 
 ## 🧪 Troubleshooting
 
 - Progress stuck at 0% ➜ check `dee.exe` logs still emit `Overall progress:` lines.
-- `deew` cannot find the input ➜ ensure Python 3.9+ is first on PATH.
-- `ffmpeg` header error ➜ confirm you’re using a build that supports `-c:a copy` with E-AC-3 inside MP4 (`ffmpeg` 5.x/6.x works).
+- `deew` execution fails ➜ ensure either `deew.exe` is in PATH, or Python 3.9+ with `deew` package installed (`pip install deew`) is accessible on PATH.
+- `ffmpeg` header error ➜ confirm you're using a build that supports `-c:a copy` with E-AC-3 inside MP4 (`ffmpeg` 5.x/6.x works).
 - Need a fresh start ➜ delete `last_params.txt` in the project root.
 
 ---
@@ -126,8 +127,9 @@ During the Blu-ray profile, the UI holds at 99% with a "converting" toast while 
 ## 📦 环境依赖
 
 - **Node.js 16+** 与 npm。
-- **Python 3.9+**（须保证 `python`/`py` 命令可用）。
-- **deew**（`pip install deew`）。
+- **deew** – 支持两种使用方式：
+  - 推荐方式：将 `deew.exe` 添加到 PATH 环境变量中（单文件可执行程序）。
+  - 备选方式：通过 `pip install deew` 安装（需要 Python 3.9+ 且 `python`/`py` 命令可用）。
 - **ffmpeg**（需添加至 PATH）。
 - **Dolby Encoding Engine**（存放 `dee.exe` 与其 `xml_templates/`、`DolbyTemp/` 等目录）。
 
@@ -165,7 +167,7 @@ Blu-ray 流程中，进度条会在 99% 停留并提示“正在转换…”，�
 ## 🧪 常见问题
 
 - 进度条停在 0% ➜ 确认 `dee.exe` 日志仍输出 `Overall progress:`。
-- `deew` 找不到输入文件 ➜ 确认 Python 3.9+ 在PATH环境变量中。
+- `deew` 执行失败 ➜ 确认已将 `deew.exe` 添加至 PATH 环境变量，或已安装 Python 3.9+ 并通过 `pip install deew` 安装 deew 包。
 - `ffmpeg` 报头部错误 ➜ 使用支持 E-AC-3 copy 的 `ffmpeg` 版本并确保在PATH环境变量中。
 - 重置参数 ➜ 删除项目根目录下的 `last_params.txt`。
 

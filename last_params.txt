@@ -1,7 +1,7 @@
 choice=2
 start=
 end=
-prepend_silence=
+prepend_silence=6
 append_silence=
 template_xml=D:\Dolby_Encoding_Engine\xml_templates\encode_to_atmos_ddp\atmos_mezz_encode_to_atmos_ddp_mp4.xml
 output_file=D:\カワキヲアメク.m4a
