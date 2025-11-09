@@ -129,6 +129,21 @@ Once the environment is ready (DEE root selected, and `deew`/`deezy`/`ffmpeg` ar
 用于杜比编码引擎 （DEE） 工作流程的开源GUI。
 专为需要更简单的方式将 ADM BWF 项目渲染为 TrueHD、DD+ 或 EAC3-JOC 可交付成果的创作者而设计，而无需接触命令行。
 
+---
+
+## 🔍 概览
+
+| 功能 | 详情 |
+| --- | --- |
+| 支持的输入 | ADM BWF（Atmos 混音） |
+| 输出工作流 | Atmos EC3 · Atmos M4A · Atmos TrueHD (MLP) · Dolby Digital Plus 7.1 for Blu-ray<br>· Dolby Atmos M4A 5.1.2 for Blu-ray |
+| 目标操作系统 | Windows（Electron 构建） |
+| 核心引擎 | Dolby Encoding Engine 5.x (`dee.exe`) |
+| 额外工具 | `deew` Python 包 · `deezy` CLI · `ffmpeg` 用于最终封装 |
+| 语言 | 英语 · 中文 |
+
+---
+
 ## ✨ 功能亮点
 
 - 实时跟踪 `dee.exe` 日志及进度条。
