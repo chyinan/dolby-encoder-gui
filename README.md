@@ -6,6 +6,8 @@
 [![python](https://img.shields.io/badge/python-3.9+-3776AB.svg)](https://www.python.org/)
 [![license](https://img.shields.io/badge/license-MIT-ff69b4.svg)](./LICENSE)
 
+[English](#dolby-encoder-gui) | [简体中文](#dolby-encoder-gui-1)
+
 A open-source GUI for Dolby Encoding Engine (DEE).<br>
 Designed for creators who need an easier way to render ADM BWF projects into TrueHD, DD+, or EAC3-JOC deliverables — without touching the command line.
 
@@ -125,6 +127,8 @@ Once the environment is ready (DEE root selected, and `deew`/`deezy`/`ffmpeg` ar
 ---
 
 # Dolby Encoder GUI
+
+[English](#dolby-encoder-gui) | [简体中文](#dolby-encoder-gui-1)
 
 用于杜比编码引擎 （DEE） 工作流程的开源GUI。
 专为需要更简单的方式将 ADM BWF 项目渲染为 TrueHD、DD+ 或 EAC3-JOC 可交付成果的创作者而设计，而无需接触命令行。
