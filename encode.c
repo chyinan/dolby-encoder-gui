@@ -730,7 +730,7 @@ int main(int argc, char *argv[])
         printf("2. ADM BWF 编码为 atmos.m4a\n");
         printf("3. ADM BWF 编码为 atmos.mlp\n");
         printf("4. ADM BWF 编码为 7.1ch Dolby Digital Plus (Blu-ray)\n");
-        printf("5. ADM BWF 编码为 Dolby Atmos M4A 7.1 (Blu-ray)\n");
+        printf("5. ADM BWF 编码为 Dolby Atmos M4A 5.1.2 (Blu-ray)\n");
         printf("6. 重复上一次操作\n");
         printf("0. 退出程序\n");
         printf("请输入选项: ");
@@ -1134,7 +1134,7 @@ encode_process:
         remove_file_if_exists(inter_mll_path);
         remove_file_if_exists(inter_log_path);
     } else if (choice == 5) {
-        printf("dee 完成 MLP 导出，开始调用 deezy 生成 Dolby Atmos M4A 7.1 (Blu-ray)...\n");
+        printf("dee 完成 MLP 导出，开始调用 deezy 生成 Dolby Atmos M4A 5.1.2 (Blu-ray)...\n");
         if (!intermediate_mlp_path[0]) {
             replace_extension(final_output_path, intermediate_mlp_path, sizeof(intermediate_mlp_path), ".mlp");
         }
