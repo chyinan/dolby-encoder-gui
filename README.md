@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="./logo.png" alt="Dolby Encoder GUI Logo" width="200">
+</div>
+
 # Dolby Encoder GUI
 
 [![release](https://img.shields.io/badge/release-v1.0-blue.svg)](./dist_electron)
