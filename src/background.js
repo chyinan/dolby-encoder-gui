@@ -95,7 +95,7 @@ const buildAppMenu = () => {
               dialog.showMessageBox(mainWindow, {
                 type: 'info',
                 title: 'About',
-                message: 'Dolby Encoding Engine',
+                message: 'Dolby Encoder GUI',
                 detail: `Version: ${app.getVersion()}\nGitHub: https://github.com/chyinan/dolby-encoder-gui`,
                 buttons: ['Open GitHub', 'OK'],
                 defaultId: 1,
@@ -404,6 +404,7 @@ async function createWindow() {
   mainWindow = new BrowserWindow({
     width: 800,
     height: 900,
+    title: 'Dolby Encoder GUI',
     icon: fs.existsSync(iconPath) ? iconPath : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
