@@ -96,6 +96,7 @@ Once the environment is ready (DEE root selected, and `deew`/`deezy`/`ffmpeg` ar
 - **Engine Directory** – stored in Electron user-data. Change it via Settings without editing env vars.
 - **Language menu** – `Ctrl/Cmd+Shift+E` (English) · `Ctrl/Cmd+Shift+C` (Chinese).
 - **Paths** – avoid double quotes in file paths; the UI guards against illegal characters.
+- **Bitrate** – All output formats are encoded at the maximum bitrate supported by each format for optimal quality.
 - **Temp cleanup** – Blu-ray workflows remove intermediate `.mlp/.eb3/.mll/.log/.ec3` files automatically.
 - **deew first-run setup** – When `deew` runs for the first time, it pops up a command-line prompt that collects the Dolby Encoding Engine folder path and the `ffmpeg` path. Complete this one-time setup before encoding.
 - **deezy availability** – Make sure `deezy` resolves from PATH; no additional configuration is required beyond installing the CLI.
@@ -206,6 +207,7 @@ Blu-ray 流程中，进度条会在 99% 停留并提示“正在转换…”，�
 - **dee 目录** 通过设置界面修改，无需手动编辑配置文件。
 - **语言切换** 快捷键：`Ctrl/Cmd+Shift+E`（英文）、`Ctrl/Cmd+Shift+C`（中文）。
 - **路径合法性**：UI 会校验双引号等非法字符，避免编解码失败。
+- **码率**：所有输出格式均以该格式所支持的最高码率进行编码，以确保最佳音质。
 - **临时文件**：Blu-ray 流程结束后会自动删除 `.mlp/.eb3/.ec3/.mll/.log` 等中间文件。
 - **deew 首次配置**：首次运行 `deew` 时会在命令行中弹出路径配置对话行，要求填写 Dolby Encoding Engine 文件夹路径和 ffmpeg 路径，完成此一次性配置后才能正常编码。
 - **deezy 命令**：确认 `deezy` 命令可在命令行直接执行，无需额外配置。
