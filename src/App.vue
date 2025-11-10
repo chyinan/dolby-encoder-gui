@@ -554,9 +554,9 @@ const selectInputFile = async () => {
   })
   if (result && !result.canceled && result.filePaths.length > 0) {
     form.inputFile = result.filePaths[0]
-    if (outputAutoMode.value) {
-      synchronizeAutoOutput()
-    }
+    // 选择新输入文件时，总是自动更新输出文件名为新的输入文件名
+    outputAutoMode.value = true
+    synchronizeAutoOutput()
   }
 }
 
