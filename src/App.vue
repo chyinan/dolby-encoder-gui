@@ -153,7 +153,8 @@ const messages = {
     loadSettingsFail: '加载设置失败: ',
     saveSettingsFail: '保存设置失败: ',
     pathIllegalChars: '文件路径不能包含双引号，请更换路径后重试。',
-    inputFileMissing: '输出失败：输入文件不存在。'
+    inputFileMissing: '输出失败：输入文件不存在。',
+    invalidAdmBwfFile: '请检查输入文件是否为正确的 ADM BWF 格式文件（缺少 chna chunk 或格式无效）。'
   },
   en: {
     title: 'Dolby Encoding Engine Tool',
@@ -209,7 +210,8 @@ const messages = {
     loadSettingsFail: 'Failed to load settings: ',
     saveSettingsFail: 'Failed to save settings: ',
     pathIllegalChars: 'File paths cannot contain double quotes. Please choose a different location.',
-    inputFileMissing: 'Encoding failed: input file does not exist.'
+    inputFileMissing: 'Encoding failed: input file does not exist.',
+    invalidAdmBwfFile: 'Please check if the input file is a valid ADM BWF format file (missing chna chunk or invalid format).'
   },
 }
 
@@ -239,6 +241,7 @@ const lastValidInputPath = ref(form.inputFile)
 const lastValidOutputPath = ref(form.outputFile)
 
 const lastErrorIsMissingFile = ref(false)
+const lastErrorIsInvalidAdmBwf = ref(false)
 
 watch(() => form.inputFile, (newVal) => {
   if (newVal === lastValidInputPath.value) return
@@ -450,6 +453,14 @@ onMounted(() => {
         if (matchMissing) {
           lastErrorIsMissingFile.value = true
         }
+        // 检测 ADM BWF 格式错误
+        const isAdmBwfError = /Invalid ADM BWF file: missing 'chna' chunk/i.test(translated) ||
+          /ATMOS_STORAGE_RES_FORMAT_INVALID/i.test(translated) ||
+          /Must be a valid ADM BWF file/i.test(translated) ||
+          /Failed to open atmos master/i.test(translated)
+        if (isAdmBwfError) {
+          lastErrorIsInvalidAdmBwf.value = true
+        }
         const trimmed = translated.trim()
         if (trimmed.includes('dee 完成 MLP 导出')) {
           enterPostProcessing()
@@ -466,6 +477,7 @@ onMounted(() => {
       ElMessage.success(completionMessage)
       logOutput.value += `${completionMessage}\n`
       lastErrorIsMissingFile.value = false
+      lastErrorIsInvalidAdmBwf.value = false
       progress.value = 100
       showProgress.value = true
       scheduleHideProgress()
@@ -478,6 +490,15 @@ onMounted(() => {
       if (lastErrorIsMissingFile.value || /Storage:\s*File\s+"(.+?)"\s+does\s+not\s+exist/i.test(error)) {
         ElMessage.error(t('inputFileMissing'))
         lastErrorIsMissingFile.value = false
+      }
+      // 检测 ADM BWF 格式错误
+      const isAdmBwfError = /Invalid ADM BWF file: missing 'chna' chunk/i.test(error) ||
+        /ATMOS_STORAGE_RES_FORMAT_INVALID/i.test(error) ||
+        /Must be a valid ADM BWF file/i.test(error) ||
+        /Failed to open atmos master/i.test(error)
+      if (lastErrorIsInvalidAdmBwf.value || isAdmBwfError) {
+        ElMessage.warning(t('invalidAdmBwfFile'))
+        lastErrorIsInvalidAdmBwf.value = false
       }
       scheduleHideProgress()
     })
