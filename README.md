@@ -10,7 +10,7 @@
 [![python](https://img.shields.io/badge/python-3.9+-3776AB.svg)](https://www.python.org/)
 [![license](https://img.shields.io/badge/license-MIT-ff69b4.svg)](./LICENSE)
 
-[英語](#dolby-encoder-gui) | [简体中文](#dolby-encoder-gui-1) | [日本語](#dolby-encoder-gui-2)
+[English](#dolby-encoder-gui) | [简体中文](#dolby-encoder-gui-1) | [日本語](#dolby-encoder-gui-2)
 
 A open-source GUI for Dolby Encoding Engine (DEE).<br>
 Designed for creators who need an easier way to render ADM BWF projects into TrueHD, DD+, or EAC3-JOC deliverables — without touching the command line.
@@ -133,7 +133,7 @@ Once the environment is ready (DEE root selected, and `deew`/`deezy`/`ffmpeg` ar
 
 # Dolby Encoder GUI
 
-[英語](#dolby-encoder-gui) | [简体中文](#dolby-encoder-gui-1) | [日本語](#dolby-encoder-gui-2)
+[English](#dolby-encoder-gui) | [简体中文](#dolby-encoder-gui-1) | [日本語](#dolby-encoder-gui-2)
 
 用于杜比编码引擎 （DEE） 工作流程的开源GUI。
 专为需要更简单的方式将 ADM BWF 项目渲染为 TrueHD、DD+ 或 EAC3-JOC 可交付成果的创作者而设计，而无需接触命令行。
@@ -238,7 +238,7 @@ Blu-ray 流程中，进度条会在 99% 停留并提示“正在转换…”，�
 
 # Dolby Encoder GUI
 
-[英語](#dolby-encoder-gui) | [简体中文](#dolby-encoder-gui-1) | [日本語](#dolby-encoder-gui-2)
+[English](#dolby-encoder-gui) | [简体中文](#dolby-encoder-gui-1) | [日本語](#dolby-encoder-gui-2)
 
 Dolby エンコーディングエンジン（DEE）ワークフロー用のオープンソース GUI です。<br>
 コマンドラインに触れることなく、ADM BWF プロジェクトを TrueHD、DD+、または EAC3-JOC で出力するための簡単な方法を提供するクリエイターのために設計されています。
