@@ -313,7 +313,7 @@ Blu-ray プロファイルの間、UI は 99% で保持され、「変換中」�
 
 ## 📸 スクリーンショット
 
-![メインワークフロー UI](./screenshot_EN.png)
+![メインワークフロー UI](./screenshot_JP.png)
 
 ---
 
