@@ -236,4 +236,124 @@ Blu-ray 流程中，进度条会在 99% 停留并提示“正在转换…”，�
 
 ---
 
+# Dolby Encoder GUI
+
+[英語](#dolby-encoder-gui) | [简体中文](#dolby-encoder-gui-1) | [日本語](#dolby-encoder-gui-2)
+
+Dolby エンコーディングエンジン（DEE）ワークフロー用のオープンソース GUI です。<br>
+コマンドラインに触れることなく、ADM BWF プロジェクトを TrueHD、DD+、または EAC3-JOC で出力するための簡単な方法を提供するクリエイターのために設計されています。
+
+---
+
+## 🔍 概観
+
+|機能|詳細|
+|---|---|
+|サポートされている入力|ADM BWF（Atmosミックス）|
+|出力ワークフロー|Atmos EC3 · Atmos M4A · Atmos TrueHD (MLP) · Blu-ray 用の Dolby Digital Plus 7.1<br>· Blu-ray 用の Dolby Atmos M4A 5.1.2|
+|対象OS|Windows（Electronビルド）|
+|コアエンジン|Dolby Encoding Engine 5.x (`dee.exe`)|
+|追加ツール|`deew` Python パッケージ · `deezy` CLI · 最終的なマルチプレックス用の `ffmpeg`|
+|言語|英語 · 中国語|
+
+---
+
+## ✨ 主な機能
+
+- `dee.exe` 出力に同期したリアルタイムログストリーミングと進行状況バー。
+- Dolby エンジンのルートディレクトリ（`dee.exe` + `xml_templates`）を保持するための設定ダイアログ。
+- 最後の成功したエンコードを復元するためのパラメータ持続（`last_params.txt`）。
+- Blu-ray 用のポストプロセッシングパイプライン：`deew` / `deezy` を実行 → 中間ファイルをクリーンアップ → `ffmpeg` で最終 `.m4a` に再マルチプレックス。
+- バイリンガル UI トグル（英語 / 中国語）およびクイックキーボードショートカット。
+
+## 📦 要件
+
+- **Node.js 16+** および開発用の npm。
+- **deew** – 2 つの方法で利用可能：
+  - 推奨：`deew.exe` を PATH に配置（単一ファイルの実行可能ファイル）。
+  - フォールバック：`pip install deew` でインストール（Python 3.9+ が `python` または `py` でアクセス可能である必要があります）。
+  - ⚠️ **初回セットアップ**：初回実行時、`deew` がコマンドライン設定プロンプトを開き、Dolby Encoding Engine フォルダパスと `ffmpeg` パスを尋ねます。
+- **deezy** – CLI をインストールし、アプリが直接呼び出せるように `deezy`（または `deezy.exe`）を PATH に保持。
+- **ffmpeg** – バイナリが PATH に存在していることを確認します。
+- **Dolby Encoding Engine** （DEE 5.1–5.2）。その `dee.exe`、`xml_templates/`、`DolbyTemp/` フォルダをそのまま保持します。
+
+> 📝 `encode.exe` はプロジェクトと共に提供されています。`encode.c` を変更するか、カスタムツールチェインが必要な場合にのみ再構築してください。
+
+---
+
+## 🚀 クイックスタート
+
+```bash
+# 1. UI の依存関係をインストール
+npm install
+
+# 2. 開発ビルドを起動
+npm run electron:serve
+
+# 3. 本番用にパッケージ化
+npm run electron:build
+```
+
+1. `encode.exe` をリポジトリのルートに置く/保持します（既に提供されています）。
+2. Dolby Encoding Engine 資産がディスクに存在することを確認します（例： `D:\Dolby_Encoding_Engine`）。
+3. アプリで **設定 → エンジンディレクトリ** を開き、DEE のルートを参照します。
+4. （オプション）`encode.exe` を他の場所に配置している場合は、`ENCODE_PATH` を設定します：
+   ```cmd
+   set ENCODE_PATH=D:\tools\encode.exe
+   ```
+5. ADM WAV 入力 + 出力名を提供し、ワークフローを選択し、**エンコード開始** をクリックします。
+
+Blu-ray プロファイルの間、UI は 99% で保持され、「変換中」のトーストが表示されます。`deew` / `deezy` および `ffmpeg` が完了すると、すべてが成功したことが表示されます。
+
+### ▶ ワンクリックランチ（Windows）
+
+一度環境が準備でき（DEE ルートが選択され、`deew` / `deezy` / `ffmpeg` が PATH に追加されたら）、アプリをダブルクリックで起動できます：
+
+- `One click launch GUI.bat`（リポジトリのルートにあります）
+
+## 📸 スクリーンショット
+
+![メインワークフロー UI](./screenshot_EN.png)
+
+---
+
+## ⚙️ 設定のヒント
+
+- **エンジンディレクトリ** – Electron ユーザーデータに保存されます。設定を変更することで、環境変数を編集せずに変更できます。
+- **言語メニュー** – `Ctrl/Cmd+Shift+E`（英語） · `Ctrl/Cmd+Shift+C`（中国語）。
+- **パス** – ファイルパス内のダブルクオーテーションを避けてください； UI は不正な文字から保護します。
+- **ビットレート** – すべての出力フォーマットは、各フォーマットがサポートする最大ビットレートでエンコードされ、最適な品質を確保します。
+- **一時クリーンアップ** – Blu-ray ワークフローは、`mlp` / `eb3` / `mll` / `log` / `ec3` などの中間ファイルを自動的に削除します。
+- **deew 最初の実行セットアップ** – `deew` が初めて実行される際、コマンドラインプロンプトが表示され、Dolby Encoding Engine フォルダのパスと `ffmpeg` パスを求められます。この一度の設定を完了した後にエンコードが開始されます。
+- **deezy の可用性** – `deezy` が PATH から問題なく解決されることを確認します。CLI をインストールすることで、追加設定は必要ありません。
+
+---
+
+## 🧪 トラブルシューティング
+
+- 進行状況が 0% で停止します ➜ `dee.exe` のログが `Overall progress:` 行を出力しているか確認してください。
+- `deew` の実行が失敗します ➜ `deew.exe` が PATH に追加されているか、Python 3.9+ がインストールされ、`pip install deew` で `deew` パッケージが利用できるか確認してください。初回実行時に、Dolby Encoding Engine と `ffmpeg` パスを求める設定ダイアログが表示されます。
+- `deezy` 実行が失敗します ➜ CLI がインストールされており、`deezy` コマンドが PATH からアクセス可能か確認してください。
+- `ffmpeg` ヘッダーエラー ➜ `ffmpeg` 5.x/6.x を使用して E-AC-3 を MP4 に含められるビルドを使用しているか確認してください。
+- 新たなスタートが必要 ➜ プロジェクトルートの `last_params.txt` を削除してください。
+
+---
+
+## ⚖️ 法律通知
+
+- このプロジェクトは Dolby Laboratories とは無関係であり、Dolby Laboratories によって承認されていません。
+- “Dolby”、“Dolby Atmos”、“Dolby TrueHD”、および“Dolby Digital Plus (DD+)”は Dolby Laboratories Licensing Corporation の登録商標です。
+- このソフトウェアには、いかなる専有の Dolby コンポーネントも含まれず、再配布されません。公式の Dolby コマンドラインツールにアクセス権を持つユーザーのためのグラフィカルユーザーインターフェースを提供するのみです。
+
+---
+
+## 🤝 クレジット
+
+- Dolby Encoding Engine（商業ソフトウェア）。
+- [deew](https://github.com/pcroland/deew) は、Blu-ray ワークフローを可能にするオープンソースラッパーです。
+- [deezy](https://github.com/jessielw/DeeZy) は Atmos Blu-ray 再マルチプレックスヘルパーです。
+- ffmpeg プロジェクトは、MP4 再マルチプレックスステージを提供します。
+
+---
+
 > MIT License · Feel free to fork, tweak, and contribute improvements. Pull requests and issue reports are welcome! 🎧
