@@ -26,7 +26,7 @@ Designed for creators who need an easier way to render ADM BWF projects into Tru
 | OS target | Windows (Electron build) |
 | Core engine | Dolby Encoding Engine 5.x (`dee.exe`) |
 | Extra tooling | `deew` Python package · `deezy` CLI · `ffmpeg` for final mux |
-| Languages | English · Chinese |
+| Languages | English · Chinese · Japanese |
 
 ---
 
@@ -36,7 +36,7 @@ Designed for creators who need an easier way to render ADM BWF projects into Tru
 - Settings dialog to persist the Dolby engine root (`dee.exe` + `xml_templates`).
 - Parameter persistence (`last_params.txt`) to restore the latest successful encode.
 - Post-processing pipeline for Blu-ray: run `deew`/`deezy` → clean intermediates → remux with `ffmpeg` → final `.m4a`.
-- Bilingual UI toggle (English / Chinese) plus quick keyboard shortcuts.
+- Multilingual UI toggle (English / Chinese / Japanese) with quick keyboard shortcuts.
 
 ---
 
@@ -94,7 +94,7 @@ Once the environment is ready (DEE root selected, and `deew`/`deezy`/`ffmpeg` ar
 ## ⚙️ Configuration Tips
 
 - **Engine Directory** – stored in Electron user-data. Change it via Settings without editing env vars.
-- **Language menu** – `Ctrl/Cmd+Shift+E` (English) · `Ctrl/Cmd+Shift+C` (Chinese).
+- **Language menu** – `Ctrl/Cmd+Shift+E` (English) · `Ctrl/Cmd+Shift+C` (Chinese) · `Ctrl/Cmd+Shift+J` (Japanese).
 - **Paths** – avoid double quotes in file paths; the UI guards against illegal characters.
 - **Bitrate** – All output formats are encoded at the maximum bitrate supported by each format for optimal quality.
 - **Temp cleanup** – Blu-ray workflows remove intermediate `.mlp/.eb3/.mll/.log/.ec3` files automatically.
@@ -149,7 +149,7 @@ Once the environment is ready (DEE root selected, and `deew`/`deezy`/`ffmpeg` ar
 | 目标操作系统 | Windows（Electron 构建） |
 | 核心引擎 | Dolby Encoding Engine 5.x (`dee.exe`) |
 | 额外工具 | `deew` Python 包 · `deezy` CLI · `ffmpeg` 用于最终封装 |
-| 语言 | 英语 · 中文 |
+| 语言 | 英语 · 中文 · 日语 |
 
 ---
 
@@ -159,7 +159,7 @@ Once the environment is ready (DEE root selected, and `deew`/`deezy`/`ffmpeg` ar
 - 设置可持久化保存 Dolby 引擎根目录路径。
 - `last_params.txt` 自动记录最近一次成功参数。
 - Blu-ray 流程自动调用 `deew`/`deezy` → 清理中间文件 → `ffmpeg` 重新封装为 `.m4a`。
-- 支持中英文界面，一键切换。
+- 支持中英日界面，一键切换。
 
 ## 📦 环境依赖
 
@@ -205,7 +205,7 @@ Blu-ray 流程中，进度条会在 99% 停留并提示“正在转换…”，�
 ## ⚙️ 配置说明
 
 - **dee 目录** 通过设置界面修改，无需手动编辑配置文件。
-- **语言切换** 快捷键：`Ctrl/Cmd+Shift+E`（英文）、`Ctrl/Cmd+Shift+C`（中文）。
+- **语言切换** 快捷键：`Ctrl/Cmd+Shift+E`（英文）、`Ctrl/Cmd+Shift+C`（中文）、`Ctrl/Cmd+Shift+J`（日文）。
 - **路径合法性**：UI 会校验双引号等非法字符，避免编解码失败。
 - **码率**：所有输出格式均以该格式所支持的最高码率进行编码，以确保最佳音质。
 - **临时文件**：Blu-ray 流程结束后会自动删除 `.mlp/.eb3/.ec3/.mll/.log` 等中间文件。
@@ -254,7 +254,7 @@ Dolby エンコーディングエンジン（DEE）ワークフロー用のオ�
 |対象OS|Windows（Electronビルド）|
 |コアエンジン|Dolby Encoding Engine 5.x (`dee.exe`)|
 |追加ツール|`deew` Python パッケージ · `deezy` CLI · 最終的なマルチプレックス用の `ffmpeg`|
-|言語|英語 · 中国語|
+|言語|英語 · 中国語 · 日本語|
 
 ---
 
@@ -264,7 +264,7 @@ Dolby エンコーディングエンジン（DEE）ワークフロー用のオ�
 - Dolby エンジンのルートディレクトリ（`dee.exe` + `xml_templates`）を保持するための設定ダイアログ。
 - 最後の成功したエンコードを復元するためのパラメータ持続（`last_params.txt`）。
 - Blu-ray 用のポストプロセッシングパイプライン：`deew` / `deezy` を実行 → 中間ファイルをクリーンアップ → `ffmpeg` で最終 `.m4a` に再マルチプレックス。
-- バイリンガル UI トグル（英語 / 中国語）およびクイックキーボードショートカット。
+- 多言語 UI トグル（英語 / 中国語 / 日本語）およびクイックキーボードショートカット。
 
 ## 📦 要件
 
@@ -320,7 +320,7 @@ Blu-ray プロファイルの間、UI は 99% で保持され、「変換中」�
 ## ⚙️ 設定のヒント
 
 - **エンジンディレクトリ** – Electron ユーザーデータに保存されます。設定を変更することで、環境変数を編集せずに変更できます。
-- **言語メニュー** – `Ctrl/Cmd+Shift+E`（英語） · `Ctrl/Cmd+Shift+C`（中国語）。
+- **言語メニュー** – `Ctrl/Cmd+Shift+E`（英語） · `Ctrl/Cmd+Shift+C`（中国語） · `Ctrl/Cmd+Shift+J`（日本語）。
 - **パス** – ファイルパス内のダブルクオーテーションを避けてください； UI は不正な文字から保護します。
 - **ビットレート** – すべての出力フォーマットは、各フォーマットがサポートする最大ビットレートでエンコードされ、最適な品質を確保します。
 - **一時クリーンアップ** – Blu-ray ワークフローは、`mlp` / `eb3` / `mll` / `log` / `ec3` などの中間ファイルを自動的に削除します。
