@@ -240,7 +240,7 @@ Blu-ray 流程中，进度条会在 99% 停留并提示“正在转换…”，�
 
 [English](#dolby-encoder-gui) | [简体中文](#dolby-encoder-gui-1) | [日本語](#dolby-encoder-gui-2)
 
-Dolby エンコーディングエンジン（DEE）ワークフロー用のオープンソース GUI です。<br>
+Dolby Encoding Engine（DEE）ワークフロー用のオープンソース GUI です。<br>
 コマンドラインに触れることなく、ADM BWF プロジェクトを TrueHD、DD+、または EAC3-JOC で出力するための簡単な方法を提供するクリエイターのために設計されています。
 
 ---
