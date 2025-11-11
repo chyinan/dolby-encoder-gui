@@ -10,7 +10,7 @@
 [![python](https://img.shields.io/badge/python-3.9+-3776AB.svg)](https://www.python.org/)
 [![license](https://img.shields.io/badge/license-MIT-ff69b4.svg)](./LICENSE)
 
-[English](#dolby-encoder-gui) | [简体中文](#dolby-encoder-gui-1)
+[英語](#dolby-encoder-gui) | [简体中文](#dolby-encoder-gui-1) | [日本語](#dolby-encoder-gui-2)
 
 A open-source GUI for Dolby Encoding Engine (DEE).<br>
 Designed for creators who need an easier way to render ADM BWF projects into TrueHD, DD+, or EAC3-JOC deliverables — without touching the command line.
@@ -133,7 +133,7 @@ Once the environment is ready (DEE root selected, and `deew`/`deezy`/`ffmpeg` ar
 
 # Dolby Encoder GUI
 
-[English](#dolby-encoder-gui) | [简体中文](#dolby-encoder-gui-1)
+[英語](#dolby-encoder-gui) | [简体中文](#dolby-encoder-gui-1) | [日本語](#dolby-encoder-gui-2)
 
 用于杜比编码引擎 （DEE） 工作流程的开源GUI。
 专为需要更简单的方式将 ADM BWF 项目渲染为 TrueHD、DD+ 或 EAC3-JOC 可交付成果的创作者而设计，而无需接触命令行。
@@ -336,6 +336,7 @@ Blu-ray プロファイルの間、UI は 99% で保持され、「変換中」�
 - `deezy` 実行が失敗します ➜ CLI がインストールされており、`deezy` コマンドが PATH からアクセス可能か確認してください。
 - `ffmpeg` ヘッダーエラー ➜ `ffmpeg` 5.x/6.x を使用して E-AC-3 を MP4 に含められるビルドを使用しているか確認してください。
 - 新たなスタートが必要 ➜ プロジェクトルートの `last_params.txt` を削除してください。
+-  **⚠️ Dolby Atmos M4A 5.1.2 の Blu-ray フォーマットにおける制限事項** この出力フォーマットは技術的には 7.1 Dolby Atmos トラックですが、Dolby Encoding Engine はエンコード時にリアサラウンドチャンネル (Lb、Rb) をトップフロントチャンネル (Tfl、Tfr) に「折り畳み」ます。現在、Dolby ライセンスを取得した Blu-ray プレーヤーのみが、このレイアウトを標準の 7.1 チャンネルに正しくデコードして再マッピングできます。その他のデバイス (PC、モバイルデバイスなど) では、トラックは 5.1.2 として解釈され、リアチャンネルがオーバーヘッドスピーカーに誤ってマッピングされます。リスニング体験の点では、リアサウンドは最小限に抑えられ、フロントチャンネルのみが正しくマッピングされます。そのため、このフォーマットは現在、ライセンスを取得した Blu-ray プレーヤーでのみ、正しい 7.1 チャンネルレンダリングを実現できます。
 
 ---
 
