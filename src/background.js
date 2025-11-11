@@ -29,7 +29,7 @@ const loadSettings = () => {
       const parsed = JSON.parse(raw)
       settings = { ...settings, ...parsed }
     }
-    if (!settings.language || !['en', 'zh'].includes(settings.language)) {
+    if (!settings.language || !['en', 'zh', 'ja'].includes(settings.language)) {
       settings.language = 'en'
     }
   } catch (err) {
@@ -50,7 +50,7 @@ const saveSettings = () => {
 protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { secure: true, standard: true } }])
 
 const setLanguage = (newLang, { notifyRenderer = true } = {}) => {
-  if (!['en', 'zh'].includes(newLang)) return false
+  if (!['en', 'zh', 'ja'].includes(newLang)) return false
   if (settings.language === newLang) return false
   settings.language = newLang
   saveSettings()
@@ -83,6 +83,13 @@ const buildAppMenu = () => {
             accelerator: 'CmdOrCtrl+Shift+C',
             checked: settings.language === 'zh',
             click: () => setLanguage('zh'),
+          },
+          {
+            label: '日本語',
+            type: 'radio',
+            accelerator: 'CmdOrCtrl+Shift+J',
+            checked: settings.language === 'ja',
+            click: () => setLanguage('ja'),
           },
         ],
       },
@@ -455,7 +462,7 @@ ipcMain.handle('choose-dee-root', async () => {
 
 ipcMain.handle('persist-language', async (event, requestedLang) => {
   const changed = setLanguage(requestedLang, { notifyRenderer: false })
-  if (mainWindow && (changed || !['en', 'zh'].includes(settings.language))) {
+  if (mainWindow && (changed || !['en', 'zh', 'ja'].includes(settings.language))) {
     mainWindow.webContents.send('set-language', settings.language)
   } else if (mainWindow && !changed) {
     mainWindow.webContents.send('settings-updated', settings)

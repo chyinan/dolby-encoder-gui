@@ -213,6 +213,63 @@ const messages = {
     inputFileMissing: 'Encoding failed: input file does not exist.',
     invalidAdmBwfFile: 'Please check if the input file is a valid ADM BWF format file (missing chna chunk or invalid format).'
   },
+  ja: {
+    title: 'Dolby Encoding Engine ツール',
+    settings: '設定',
+    settingsTitle: 'Dolby Encoding Engine 設定',
+    deeRootLabel: 'エンジンディレクトリ',
+    deeRootPlaceholder: 'dee.exe を含むフォルダを選択してください',
+    saveButton: '保存',
+    inputFile: '入力ファイル',
+    browse: '参照',
+    outputFile: '出力ファイル',
+    encodeType: 'エンコード種類',
+    optionEC3: 'Dolby Atmos EC3',
+    optionM4A: 'Dolby Atmos M4A',
+    optionTrueHD: 'Dolby Atmos TrueHD (MLP)',
+    optionDDPBluRay: 'Dolby Digital Plus 7.1 (Blu-ray)',
+    optionAtmosBluRay: 'Dolby Atmos M4A 5.1.2 (Blu-ray)',
+    startTime: '開始時間',
+    endTime: '終了時間',
+    prependSilence: '冒頭サイレンス',
+    appendSilence: '末尾サイレンス',
+    startEncodingBtn: 'エンコード開始',
+    cancelEncodingBtn: 'エンコード中止',
+    loadLastParamsBtn: '前回のパラメータ読込',
+    exitBtn: '終了',
+    logOutputTitle: 'ログ出力',
+    clearLogBtn: 'ログをクリア',
+    logCleared: 'ログをクリアしました',
+    placeholderStart: 'HH:MM:SS:FF / HH:MM:SS.xx',
+    placeholderEnd: 'HH:MM:SS:FF / HH:MM:SS.xx',
+    placeholderPrepend: '秒（例: 10.0）',
+    placeholderAppend: '秒（例: 5.0）',
+    encodingComplete: 'エンコード完了、終了コード: ',
+    encodingError: 'エンコードエラー: ',
+    encodingStarting: 'エンコードを開始します...',
+    encodingCancelled: 'エンコードを中止しました',
+    startFailed: 'エンコード開始に失敗しました: ',
+    cancelRequested: '中止を要求しました...',
+    cancelEncodingFailed: '中止に失敗しました: ',
+    encodingInProgress: 'エンコードは進行中です。',
+    postProcessMessage: 'DeeW/Deezy + ffmpeg による変換中です… しばらくお待ちください。',
+    loadingLast: '前回のパラメータを読み込み中...',
+    loadedLastOk: '前回のパラメータを読み込みました。',
+    loadedLastNone: '有効な前回の操作は見つかりませんでした。',
+    loadParamsFail: 'パラメータの読み込みに失敗しました: ',
+    confirmExitTitle: '確認',
+    confirmExitMessage: 'アプリを終了してもよろしいですか？',
+    confirmButton: 'OK',
+    cancelButton: 'キャンセル',
+    languageSwitched: '日本語に切り替えました',
+    deeRootUpdated: 'Dolby エンジンのパスを更新しました',
+    deeRootSelectError: 'ディレクトリの選択に失敗しました',
+    loadSettingsFail: '設定の読み込みに失敗しました: ',
+    saveSettingsFail: '設定の保存に失敗しました: ',
+    pathIllegalChars: 'ファイルパスに二重引用符は使用できません。別のパスを選択してください。',
+    inputFileMissing: 'エンコード失敗：入力ファイルが存在しません。',
+    invalidAdmBwfFile: '入力ファイルが正しい ADM BWF 形式かご確認ください（chna チャンク欠如または無効な形式）。'
+  },
 }
 
 const t = (key) => messages[lang.value]?.[key] ?? key
@@ -428,7 +485,7 @@ onMounted(() => {
   if (ipcRenderer) {
     loadSettingsFromMain()
       .then((settingsResult) => {
-        if (!settingsResult || !['en', 'zh'].includes(settingsResult.language)) {
+        if (!settingsResult || !['en', 'zh', 'ja'].includes(settingsResult.language)) {
           ipcRenderer.invoke('persist-language', lang.value).catch(() => {})
         }
       })
@@ -531,7 +588,7 @@ onMounted(() => {
       applySettings(newSettings)
     })
     ipcRenderer.on('set-language', (event, newLang) => {
-      if (newLang === 'en' || newLang === 'zh') {
+      if (newLang === 'en' || newLang === 'zh' || newLang === 'ja') {
         const changed = lang.value !== newLang
         lang.value = newLang
         localStorage.setItem('lang', newLang)
@@ -638,7 +695,7 @@ const applySettings = (data) => {
   currentSettings.value = { ...currentSettings.value, ...data }
   deeRootInput.value = currentSettings.value.deeRoot || ''
   const newLang = currentSettings.value.language
-  if (newLang && ['en', 'zh'].includes(newLang) && newLang !== lang.value) {
+  if (newLang && ['en', 'zh', 'ja'].includes(newLang) && newLang !== lang.value) {
     lang.value = newLang
     localStorage.setItem('lang', newLang)
   }

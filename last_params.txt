@@ -1,9 +1,9 @@
-choice=5
+choice=1
 start=
 end=
 prepend_silence=
 append_silence=
-template_xml=D:\Dolby_Encoding_Engine\xml_templates\encode_to_dthd\atmos_mezz_encode_to_dthd_mlp.xml
-output_file=D:\ヒグチアイ - 悪魔の子.m4a
+template_xml=D:\Dolby_Encoding_Engine\xml_templates\encode_to_atmos_ddp\atmos_mezz_encode_to_atmos_ddp_ec3.xml
+output_file=D:\dolby_auto_output_mhudzura.ec3
 input_file=D:\ADM.wav
 valid=1
