@@ -125,7 +125,7 @@ Once the environment is ready (DEE root selected, and `deew`/`deezy`/`ffmpeg` ar
 ## 🤝 Credits
 
 - Dolby Encoding Engine (commercial software) for the core transcodes.
-- [deew](https://github.com/pcroland/deew) for the open-source wrapper enabling the Blu-ray Dolby Digital Plus pipeline.especially solving the problem of 7.1 Blu-ray channel swapping caused by DEE.
+- [deew](https://github.com/pcroland/deew) for the open-source wrapper enabling the Blu-ray Dolby Digital Plus pipeline, especially solving the problem of 7.1 Blu-ray channel swapping caused by DEE.
 - [deezy](https://github.com/jessielw/DeeZy) for the Atmos Blu-ray remux helper.
 - ffmpeg project for the MP4 remuxing stage.
 
