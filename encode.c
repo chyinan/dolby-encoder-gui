@@ -1062,7 +1062,7 @@ encode_process:
 
         char deew_cmd[4096];
         int deew_len = snprintf(deew_cmd, sizeof(deew_cmd),
-            "cmd /C \"chcp 65001 > nul && cd /d \"%s\" && (deew.exe -i \"%s\" -f ddp -b 1536 -fb || deew -i \"%s\" -f ddp -b 1536 -fb || python -X utf8 -m deew -i \"%s\" -f ddp -b 1536 -fb || py -3 -X utf8 -m deew -i \"%s\" -f ddp -b 1536 -fb || py -3.9 -X utf8 -m deew -i \"%s\" -f ddp -b 1536 -fb)\"",
+            "cmd /C \"chcp 65001 > nul && cd /d \"%s\" && (deew.exe -i \"%s\" -f ddp -b 1664 -fb || deew -i \"%s\" -f ddp -b 1664 -fb || python -X utf8 -m deew -i \"%s\" -f ddp -b 1664 -fb || py -3 -X utf8 -m deew -i \"%s\" -f ddp -b 1664 -fb || py -3.9 -X utf8 -m deew -i \"%s\" -f ddp -b 1664 -fb)\"",
             mlp_directory,
             intermediate_mlp_path,
             intermediate_mlp_path,
@@ -1165,7 +1165,7 @@ encode_process:
 
         char deezy_cmd[4096];
         int deezy_len = snprintf(deezy_cmd, sizeof(deezy_cmd),
-            "cmd /C \"chcp 65001 > nul && cd /d \"%s\" && (deezy encode atmos --atmos-mode bluray --bitrate 1536 \"%s\" || deezy.exe encode atmos --atmos-mode bluray --bitrate 1536 \"%s\")\"",
+            "cmd /C \"chcp 65001 > nul && cd /d \"%s\" && (deezy encode atmos --atmos-mode bluray --bitrate 1664 \"%s\" || deezy.exe encode atmos --atmos-mode bluray --bitrate 1664 \"%s\")\"",
             mlp_directory,
             intermediate_mlp_path,
             intermediate_mlp_path);
