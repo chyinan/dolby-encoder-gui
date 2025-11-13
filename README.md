@@ -125,7 +125,7 @@ Once the environment is ready (DEE root selected, and `deew`/`deezy`/`ffmpeg` ar
 ## 🤝 Credits
 
 - Dolby Encoding Engine (commercial software) for the core transcodes.
-- [deew](https://github.com/pcroland/deew) for the open-source wrapper enabling the Blu-ray Dolby Digital Plus pipeline.
+- [deew](https://github.com/pcroland/deew) for the open-source wrapper enabling the Blu-ray Dolby Digital Plus pipeline.especially solving the problem of 7.1 Blu-ray channel swapping caused by DEE.
 - [deezy](https://github.com/jessielw/DeeZy) for the Atmos Blu-ray remux helper.
 - ffmpeg project for the MP4 remuxing stage.
 
@@ -230,7 +230,7 @@ Blu-ray 流程中，进度条会在 99% 停留并提示“正在转换…”，�
 ## 🤝 鸣谢
 
 - Dolby Encoding Engine（商业软件）。
-- [deew](https://github.com/pcroland/deew) 开源项目提供了 Blu-ray 流程核心能力。
+- [deew](https://github.com/pcroland/deew) 开源项目提供了 Blu-ray 流程核心能力，尤其是解决了DEE造成的7.1 Blu-ray的声道交换的问题
 - [deezy](https://github.com/jessielw/DeeZy) 提供 Atmos Blu-ray 封装辅助。
 - ffmpeg 项目提供 MP4 重封装能力。
 
@@ -351,7 +351,7 @@ Blu-ray プロファイルの間、UI は 99% で保持され、「変換中」�
 ## 🤝 クレジット
 
 - Dolby Encoding Engine（商業ソフトウェア）。
-- [deew](https://github.com/pcroland/deew) は、Blu-ray ワークフローを可能にするオープンソースラッパーです。
+- [deew](https://github.com/pcroland/deew) は、Blu-ray ワークフローを可能にするオープンソースラッパーです、特に DEE によって引き起こされる 7.1 Blu-ray チャンネル切り替えの問題を解決します。
 - [deezy](https://github.com/jessielw/DeeZy) は Atmos Blu-ray 再マルチプレックスヘルパーです。
 - ffmpeg プロジェクトは、MP4 再マルチプレックスステージを提供します。
 
