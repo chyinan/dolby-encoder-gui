@@ -230,7 +230,7 @@ Blu-ray 流程中，进度条会在 99% 停留并提示“正在转换…”，�
 ## 🤝 鸣谢
 
 - Dolby Encoding Engine（商业软件）。
-- [deew](https://github.com/pcroland/deew) 开源项目提供了 Blu-ray 流程核心能力，尤其是解决了DEE造成的7.1 Blu-ray的声道交换的问题
+- [deew](https://github.com/pcroland/deew) 开源项目提供了 Blu-ray 流程核心能力，尤其是解决了DEE造成的7.1 Blu-ray的声道交换的问题。
 - [deezy](https://github.com/jessielw/DeeZy) 提供 Atmos Blu-ray 封装辅助。
 - ffmpeg 项目提供 MP4 重封装能力。
 
