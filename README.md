@@ -111,6 +111,7 @@ Once the environment is ready (DEE root selected, and `deew`/`deezy`/`ffmpeg` ar
 - `ffmpeg` header error ➜ confirm you're using a build that supports `-c:a copy` with E-AC-3 inside MP4 (`ffmpeg` 5.x/6.x works).
 - Need a fresh start ➜ delete `last_params.txt` in the project root.
 - **⚠️ Dolby Atmos M4A 7.1 for Blu-ray format limitation** – This output format is technically a 7.1 Dolby Atmos track, but Dolby Encoding Engine will "fold" the rear surround channels (Lb, Rb) into top-front channels (Tfl, Tfr) during encoding. Currently, only Dolby-licensed Blu-ray players can correctly decode and remap this layout back to standard 7.1 channels. On other devices (PCs, mobile devices, etc.), the track is interpreted as 5.1.2, causing the rear channels to be incorrectly mapped to overhead speakers. In terms of listening experience, there is minimal rear sound, with only the front channels properly mapped. Therefore, this format is currently only suitable for licensed Blu-ray players to achieve correct 7.1 channel rendering.
+![杜比声明](./screenshot_warning.png)
 
 ---
 
@@ -220,6 +221,7 @@ Blu-ray 流程中，进度条会在 99% 停留并提示“正在转换…”，�
 - `ffmpeg` 报头部错误 ➜ 使用支持 E-AC-3 copy 的 `ffmpeg` 版本并确保在PATH环境变量中。
 - 重置参数 ➜ 删除项目根目录下的 `last_params.txt`。
 - **⚠️ Dolby Atmos M4A 7.1 for Blu-ray 格式限制**：此输出格式本质上是 7.1 声道的 Dolby Atmos 音轨，但 Dolby Encoding Engine 在编码过程中会将后置环绕声道（Lb, Rb）“折叠”为前上方天空声道（Tfl, Tfr）。目前只有杜比授权的蓝光播放器才能正确解码并将此布局还原为标准的 7.1 声道。在其他设备（PC、移动设备等）上，该音轨会被识别为 5.1.2声道，导致后置声道被错误映射到前上方天空声道，就听感而言，后方几乎没有声音，只有正面声道正常映射。因此此格式实际上目前仅适用于获得授权的蓝光播放器才能得到正确的 7.1 声道渲染效果。
+![杜比声明](./screenshot_warning.png)
 
 ## ⚖️ 法律声明
 
@@ -337,6 +339,7 @@ Blu-ray プロファイルの間、UI は 99% で保持され、「変換中」�
 - `ffmpeg` ヘッダーエラー ➜ `ffmpeg` 5.x/6.x を使用して E-AC-3 を MP4 に含められるビルドを使用しているか確認してください。
 - 新たなスタートが必要 ➜ プロジェクトルートの `last_params.txt` を削除してください。
 -  **⚠️ Dolby Atmos M4A 7.1 の Blu-ray フォーマットにおける制限事項** この出力フォーマットは技術的には 7.1 Dolby Atmos トラックですが、Dolby Encoding Engine はエンコード時にリアサラウンドチャンネル (Lb、Rb) をトップフロントチャンネル (Tfl、Tfr) に「折り畳み」ます。現在、Dolby ライセンスを取得した Blu-ray プレーヤーのみが、このレイアウトを標準の 7.1 チャンネルに正しくデコードして再マッピングできます。その他のデバイス (PC、モバイルデバイスなど) では、トラックは 5.1.2 として解釈され、リアチャンネルがオーバーヘッドスピーカーに誤ってマッピングされます。リスニング体験の点では、リアサウンドは最小限に抑えられ、フロントチャンネルのみが正しくマッピングされます。そのため、このフォーマットは現在、ライセンスを取得した Blu-ray プレーヤーでのみ、正しい 7.1 チャンネルレンダリングを実現できます。
+![杜比声明](./screenshot_warning.png)
 
 ---
 
